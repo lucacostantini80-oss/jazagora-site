@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jazagora</title>
+</head>
+<body>
+  <h1>Jazagora</h1>
+
+  <p>Jazagora è un'app dedicata al jazz: luoghi, eventi, radio live e community.</p>
+
+  <h2>Pagine legali</h2>
+
+  <ul>
+    <li><a href="privacy-policy/">Privacy Policy</a></li>
+    <li><a href="terms/">Terms and Conditions</a></li>
+    <li><a href="delete-account/">Delete Account</a></li>
+  </ul>
+
+  <p>Contatto: support@jazagora.com</p>
+</body>
+</html>
