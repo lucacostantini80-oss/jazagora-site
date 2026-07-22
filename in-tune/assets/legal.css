@@ -63,7 +63,7 @@ a:hover, a:focus-visible { color: #65d985; }
 .instrument-panel {
   position: relative;
   overflow: hidden;
-  padding: clamp(24px, 6vw, 54px);
+  padding: clamp(44px, 7vw, 62px) clamp(24px, 6vw, 54px) clamp(40px, 6vw, 54px);
   border: 1px solid var(--border);
   border-radius: 22px;
   background: linear-gradient(165deg, #252824 0%, var(--panel) 33%, var(--panel-deep) 100%);
@@ -75,21 +75,33 @@ a:hover, a:focus-visible { color: #65d985; }
     0 0 0 6px #383b37;
 }
 
-.instrument-panel::before,
-.instrument-panel::after {
+.bolt {
   position: absolute;
-  top: 16px;
   width: 11px;
   height: 11px;
   border: 1px solid #080909;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #6d7069, #222421 48%, #050606 75%);
   box-shadow: 0 2px 3px #000;
-  content: "";
 }
 
-.instrument-panel::before { left: 16px; }
-.instrument-panel::after { right: 16px; }
+.bolt::before,
+.bolt::after {
+  position: absolute;
+  top: 4px;
+  left: 1px;
+  width: 7px;
+  height: 1px;
+  background: #080909;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.bolt::after { transform: rotate(-45deg); }
+.bolt--top-left { top: 16px; left: 16px; }
+.bolt--top-right { top: 16px; right: 16px; }
+.bolt--bottom-left { bottom: 16px; left: 16px; }
+.bolt--bottom-right { right: 16px; bottom: 16px; }
 
 h1 {
   margin: 0 0 .35rem;
@@ -160,7 +172,6 @@ footer {
 
 @media (max-width: 560px) {
   .page { width: min(100% - 22px, 880px); padding-top: 28px; }
-  .instrument-panel { border-radius: 16px; }
+  .instrument-panel { padding-top: 48px; padding-bottom: 44px; border-radius: 16px; }
   ul { padding-left: 1.25rem; }
 }
-
