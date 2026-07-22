@@ -14,12 +14,16 @@
 
   const closeMenu = () => {
     menuButton?.setAttribute('aria-expanded', 'false');
+    const label = menuButton?.querySelector('.sr-only');
+    if (label) label.textContent = 'Open menu';
     navigation?.classList.remove('is-open');
   };
 
   menuButton?.addEventListener('click', () => {
     const expanded = menuButton.getAttribute('aria-expanded') === 'true';
     menuButton.setAttribute('aria-expanded', String(!expanded));
+    const label = menuButton.querySelector('.sr-only');
+    if (label) label.textContent = expanded ? 'Open menu' : 'Close menu';
     navigation?.classList.toggle('is-open', !expanded);
   });
 
@@ -36,7 +40,7 @@
 
   document.querySelectorAll('[data-coming-soon]').forEach((button) => {
     button.addEventListener('click', () => {
-      showToast(`${button.dataset.comingSoon} sarà disponibile prossimamente su Google Play.`);
+      showToast(`${button.dataset.comingSoon} will be available soon on Google Play.`);
     });
   });
 })();

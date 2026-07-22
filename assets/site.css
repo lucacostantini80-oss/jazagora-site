@@ -111,34 +111,62 @@ img { display: block; max-width: 100%; height: auto; }
   position: relative;
   width: 30px;
   aspect-ratio: 1;
-  border: 1px solid rgba(244, 209, 156, .55);
+  border: 1px solid rgba(244, 209, 156, .7);
   border-radius: 50%;
+  background: radial-gradient(circle, rgba(118, 81, 196, .36) 0 24%, transparent 26%);
+  box-shadow: 0 0 12px rgba(244, 209, 156, .12);
 }
 .brand-mark::before,
-.brand-mark::after,
-.brand-mark span {
+.brand-mark::after {
   content: "";
   position: absolute;
-  border: 1.5px solid var(--gold);
+  border: 1px solid;
   border-radius: 50%;
 }
-.brand-mark::before { inset: 5px; border-left-color: transparent; }
-.brand-mark::after { inset: 9px; border-top-color: transparent; }
-.brand-mark span:first-child {
+.brand-mark::before {
+  inset: 4px;
+  border-color: rgba(244, 209, 156, .88);
+}
+.brand-mark::after {
+  inset: 8px;
+  border-color: rgba(53, 216, 221, .82);
+}
+.brand-mark span {
+  --dot: #35d8dd;
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  animation: brand-orbit 5.4s linear infinite;
+}
+.brand-mark span::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
   width: 5px;
   height: 5px;
-  top: 1px;
-  right: 4px;
-  background: #35d8dd;
-  border: 0;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 8px var(--dot);
+  transform: translateX(-50%);
 }
-.brand-mark span:last-child {
-  width: 4px;
-  height: 4px;
-  bottom: 3px;
-  left: 2px;
-  background: #ff6c80;
-  border: 0;
+.brand-mark span:nth-child(2) {
+  --dot: #ffb51d;
+  inset: 3px;
+  animation-duration: 4.6s;
+  animation-direction: reverse;
+  animation-delay: -1.4s;
+}
+.brand-mark span:nth-child(2)::after { width: 4px; height: 4px; }
+.brand-mark span:nth-child(3) {
+  --dot: #ff5574;
+  inset: 7px;
+  animation-duration: 3.8s;
+  animation-delay: -2.2s;
+}
+.brand-mark span:nth-child(3)::after { width: 3px; height: 3px; top: -1px; }
+@keyframes brand-orbit {
+  to { transform: rotate(360deg); }
 }
 
 .site-nav { display: flex; align-items: center; gap: 6px; }
@@ -298,12 +326,11 @@ img { display: block; max-width: 100%; height: auto; }
   min-height: 590px;
   padding-block: clamp(90px, 14vw, 180px);
   display: grid;
-  grid-template-columns: 74px minmax(0, 1.05fr) minmax(280px, .95fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
   gap: clamp(28px, 5vw, 74px);
   align-items: start;
   border-top: 1px solid var(--line);
 }
-.section-number { color: rgba(244, 209, 156, .48); font-size: .78rem; font-weight: 800; letter-spacing: .16em; }
 .vision h2,
 .section-heading h2,
 .future h2 {
@@ -349,7 +376,7 @@ img { display: block; max-width: 100%; height: auto; }
   min-height: 760px;
   overflow: hidden;
   display: grid;
-  grid-template-rows: 1.2fr auto;
+  grid-template-rows: 470px 1fr;
   border: 1px solid rgba(255,255,255,.14);
   border-radius: 38px;
   background: linear-gradient(155deg, rgba(73, 35, 124, .82), rgba(17, 5, 39, .94));
@@ -385,14 +412,14 @@ img { display: block; max-width: 100%; height: auto; }
 }
 .app-card-intune .app-media img { width: min(78%, 400px); border-radius: 24px; transform: rotate(2deg); }
 .app-card:hover .app-media img { transform: rotate(0) scale(1.025); }
-.app-content { position: relative; z-index: 2; margin-top: -54px; padding: 32px clamp(28px, 5vw, 48px) 46px; }
+.app-content { position: relative; z-index: 2; min-height: 338px; margin-top: -54px; padding: 32px clamp(28px, 5vw, 48px) 46px; display: flex; flex-direction: column; align-items: flex-start; }
 .app-content h3 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.5rem, 5vw, 4.2rem); font-weight: 500; letter-spacing: -.045em; }
 .app-tagline { margin: 8px 0 20px; color: var(--gold); font-size: .83rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .app-card-intune .app-tagline { color: #62e279; }
 .app-content > p:not(.app-index):not(.app-tagline) { max-width: 470px; margin: 0; color: var(--muted); line-height: 1.7; }
 
 .store-button {
-  margin-top: 28px;
+  margin-top: auto;
   padding: 11px 20px;
   min-width: 210px;
   display: inline-flex;
@@ -527,7 +554,7 @@ img { display: block; max-width: 100%; height: auto; }
   .vision-body { padding-top: 0; }
   .section-heading { grid-template-columns: 1fr; gap: 24px; }
   .apps-grid { grid-template-columns: 1fr; }
-  .app-card { min-height: 0; }
+  .app-card { min-height: 0; grid-template-rows: auto 1fr; }
   .future { grid-template-columns: 1fr; grid-template-areas: "orbit" "copy" "tags"; }
   .future-orbit { width: min(74vw, 330px); }
 }
