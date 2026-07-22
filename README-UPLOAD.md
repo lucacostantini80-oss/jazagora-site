@@ -2,8 +2,6 @@
 
 Homepage redesigned on 22 July 2026. Legal pages updated in English on 21 July 2026.
 
-The public website is maintained exclusively in English. No separate Italian homepage is included.
-
 ## Main website files
 
 - `index.html`
