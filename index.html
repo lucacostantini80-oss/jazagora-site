@@ -25,7 +25,8 @@
     <meta name="twitter:description" content="Italian jazz events and venues, worldwide live jazz radio, international magazines and creative apps.">
     <meta name="twitter:image" content="https://jazagora.com/assets/jazagora-universe-hero.png">
     <title>Jazagora — Jazz, music, art and creative technology</title>
-    <link rel="preload" href="assets/jazagora-universe-hero.png" as="image">
+    <link rel="preload" href="assets/jazagora-universe-hero-mobile.webp" as="image" type="image/webp" media="(max-width: 700px)">
+    <link rel="preload" href="assets/jazagora-universe-hero.webp" as="image" type="image/webp" media="(min-width: 701px)">
     <link rel="stylesheet" href="assets/site.css">
     <script src="assets/site.js" defer></script>
     <script type="application/ld+json">
@@ -85,7 +86,10 @@
 
     <main id="main">
       <section class="hero" id="top" aria-labelledby="hero-title">
-        <div class="hero-art" role="img" aria-label="Jazagora.com identity with purple sound waves and gold details"></div>
+        <picture class="hero-art">
+          <source media="(max-width: 700px)" srcset="assets/jazagora-universe-hero-mobile.webp" type="image/webp">
+          <img src="assets/jazagora-universe-hero.webp" alt="Jazagora.com identity with purple sound waves and gold details" width="1280" height="720" fetchpriority="high" decoding="async">
+        </picture>
         <div class="hero-copy">
           <p class="eyebrow">A creative universe</p>
           <h1 id="hero-title">Music, art and technology <span>in every direction</span></h1>
@@ -124,7 +128,7 @@
           <article class="app-card app-card-jazagora">
             <div class="app-media">
               <div class="media-glow" aria-hidden="true"></div>
-              <img src="assets/jazagora-app.png" alt="Jazagora app icon" width="1024" height="1024">
+              <img src="assets/jazagora-app.webp" alt="Jazagora app icon" width="720" height="720" loading="lazy" decoding="async">
             </div>
             <div class="app-content">
               <h3>Jazagora</h3>
@@ -145,7 +149,7 @@
           <article class="app-card app-card-intune">
             <div class="app-media">
               <div class="media-glow" aria-hidden="true"></div>
-              <img src="assets/in-tune-app.png" alt="In-Tune Chromatic Tuner app screen" width="1254" height="1254">
+              <img src="assets/in-tune-app.webp" alt="In-Tune Chromatic Tuner app screen" width="820" height="820" loading="lazy" decoding="async">
             </div>
             <div class="app-content">
               <h3>In‑Tune</h3>

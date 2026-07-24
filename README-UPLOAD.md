@@ -1,6 +1,6 @@
 # Jazagora website — GitHub upload
 
-Homepage redesigned on 22 July 2026. Legal pages updated in English on 21 July 2026.
+Homepage redesigned on 22 July 2026. SEO, favicon and image delivery optimized on 24 July 2026. Legal pages updated in English on 21 July 2026.
 
 The public website is maintained exclusively in English. No separate Italian homepage is included.
 
@@ -9,14 +9,25 @@ The public website is maintained exclusively in English. No separate Italian hom
 - `index.html`
 - `assets/site.css`
 - `assets/site.js`
+- `assets/jazagora-universe-hero.webp`
+- `assets/jazagora-universe-hero-mobile.webp`
+- `assets/jazagora-app.webp`
+- `assets/in-tune-app.webp`
 - `assets/jazagora-universe-hero.png`
 - `assets/jazagora-app.png`
 - `assets/jazagora-app-light.png`
 - `assets/in-tune-app.png`
+- `favicon.svg`
+- `favicon-48x48.png`
+- `favicon-96x96.png`
+- `favicon-192x192.png`
+- `favicon-512x512.png`
+- `apple-touch-icon.png`
 
 ## Legal page files
 
 - `assets/legal.css`
+- `assets/jazagora-orbit.webp`
 - `assets/jazagora-orbit.png`
 - `privacy-policy/index.html`
 - `terms/index.html`
@@ -35,9 +46,11 @@ The Sources & Attribution page is linked from Privacy Policy and Terms only. No 
 
 The Google Play controls on the homepage currently display a clear “coming soon” message. Replace their behavior with the final Play Store URLs only when each listing is publicly available.
 
+The PNG originals remain in the repository for social previews and compatibility. The live page loads the smaller WebP assets, including a dedicated mobile hero image.
+
 Suggested commit message:
 
-`Redesign Jazagora homepage and showcase apps`
+`Optimize Jazagora website images and favicon`
 
 ## Important implementation alignment
 

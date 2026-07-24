@@ -228,10 +228,16 @@ img { display: block; max-width: 100%; height: auto; }
 }
 
 .hero-art {
+  display: block;
   width: min(100%, 1280px);
   aspect-ratio: 16 / 9;
-  background: url("jazagora-universe-hero.png") center / contain no-repeat;
   filter: drop-shadow(0 38px 72px rgba(48, 14, 92, .25));
+}
+.hero-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .hero-copy {
