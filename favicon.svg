@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Jazagora orbit">
+  <defs>
+    <radialGradient id="background" cx="50%" cy="46%" r="72%">
+      <stop offset="0" stop-color="#16072e"/>
+      <stop offset="0.58" stop-color="#0d041d"/>
+      <stop offset="1" stop-color="#070211"/>
+    </radialGradient>
+    <radialGradient id="core" cx="38%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#e4d8ff"/>
+      <stop offset="0.22" stop-color="#b99aff"/>
+      <stop offset="0.52" stop-color="#7d52cf"/>
+      <stop offset="1" stop-color="#28104b"/>
+    </radialGradient>
+    <radialGradient id="red" cx="35%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#ffb2bf"/>
+      <stop offset="0.45" stop-color="#ff5f78"/>
+      <stop offset="1" stop-color="#bd2147"/>
+    </radialGradient>
+    <radialGradient id="cyan" cx="35%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#baffff"/>
+      <stop offset="0.45" stop-color="#3bd9dc"/>
+      <stop offset="1" stop-color="#13858e"/>
+    </radialGradient>
+    <radialGradient id="gold" cx="35%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#fff3cf"/>
+      <stop offset="0.45" stop-color="#f4d19c"/>
+      <stop offset="1" stop-color="#c79b55"/>
+    </radialGradient>
+    <filter id="coreGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="redGlow" x="-180%" y="-180%" width="460%" height="460%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="cyanGlow" x="-180%" y="-180%" width="460%" height="460%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="goldGlow" x="-180%" y="-180%" width="460%" height="460%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#background)"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#f4d19c" stroke-opacity=".32" stroke-width="1.5"/>
+  <circle cx="256" cy="256" r="135" fill="none" stroke="#f4d19c" stroke-opacity=".32" stroke-width="1.5"/>
+  <circle cx="256" cy="256" r="86" fill="none" stroke="#f4d19c" stroke-opacity=".32" stroke-width="1.5"/>
+
+  <circle cx="256" cy="256" r="49" fill="url(#core)" filter="url(#coreGlow)"/>
+  <circle cx="164" cy="97" r="9" fill="url(#red)" filter="url(#redGlow)"/>
+  <circle cx="123" cy="318" r="8" fill="url(#cyan)" filter="url(#cyanGlow)"/>
+  <circle cx="309" cy="324" r="8" fill="url(#gold)" filter="url(#goldGlow)"/>
+</svg>
