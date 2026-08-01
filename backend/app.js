@@ -11,6 +11,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import {
   collection,
+  collectionGroup,
+  deleteDoc,
   getFirestore,
   onSnapshot,
   query,
@@ -48,6 +50,22 @@ const elements = {
   activeConsentCount: document.querySelector("#activeConsentCount"),
   uniqueEmailCount: document.querySelector("#uniqueEmailCount"),
   lastSync: document.querySelector("#lastSync"),
+  reviewCount: document.querySelector("#reviewCount"),
+  reviewLastSync: document.querySelector("#reviewLastSync"),
+  reviewConnectionStatus: document.querySelector("#reviewConnectionStatus"),
+  reviewTableBody: document.querySelector("#reviewTableBody"),
+  reviewEmptyState: document.querySelector("#reviewEmptyState"),
+  reviewEmptyTitle: document.querySelector("#reviewEmptyTitle"),
+  reviewEmptyDescription: document.querySelector("#reviewEmptyDescription"),
+  reviewResultSummary: document.querySelector("#reviewResultSummary"),
+  reviewSearchInput: document.querySelector("#reviewSearchInput"),
+  reviewRatingFilter: document.querySelector("#reviewRatingFilter"),
+  reviewClubFilter: document.querySelector("#reviewClubFilter"),
+  resetReviewFilters: document.querySelector("#resetReviewFilters"),
+  deleteReviewDialog: document.querySelector("#deleteReviewDialog"),
+  deleteReviewSummary: document.querySelector("#deleteReviewSummary"),
+  cancelDeleteReviewButton: document.querySelector("#cancelDeleteReviewButton"),
+  confirmDeleteReviewButton: document.querySelector("#confirmDeleteReviewButton"),
   searchInput: document.querySelector("#searchInput"),
   copyEmailsButton: document.querySelector("#copyEmailsButton"),
   consentTableBody: document.querySelector("#consentTableBody"),
@@ -57,7 +75,12 @@ const elements = {
 };
 
 let allConsentUsers = [];
+let allReviews = [];
+let clubNamesById = new Map();
 let unsubscribeUsers = null;
+let unsubscribeReviews = null;
+let unsubscribeClubs = null;
+let pendingReviewDelete = null;
 let toastTimer = null;
 
 function setAuthMessage(message = "") {
@@ -67,6 +90,11 @@ function setAuthMessage(message = "") {
 function setConnectionStatus(label, isError = false) {
   elements.connectionStatus.lastChild.textContent = label;
   elements.connectionStatus.classList.toggle("error", isError);
+}
+
+function setReviewConnectionStatus(label, isError = false) {
+  elements.reviewConnectionStatus.lastChild.textContent = label;
+  elements.reviewConnectionStatus.classList.toggle("error", isError);
 }
 
 function showToast(message) {
@@ -103,14 +131,66 @@ function formatDate(value) {
   }).format(date);
 }
 
-function getDisplayName(data) {
+function getStoredDisplayName(data) {
+  const candidates = [
+    data.displayName,
+    data.name,
+    data.fullName,
+    data.username,
+  ];
+  const name = candidates.find((value) => String(value || "").trim());
+  return name ? String(name).trim() : "";
+}
+
+function isGenericUserName(value) {
+  const normalized = normalizeSearchText(value);
   return (
-    data.displayName ||
-    data.name ||
-    data.fullName ||
-    data.username ||
-    "Nome non salvato"
+    !normalized ||
+    normalized === "utente jazagora" ||
+    normalized === "nome non salvato" ||
+    normalized === "nome non disponibile"
   );
+}
+
+function getReviewAuthorName(uid) {
+  const review = allReviews.find(
+    (item) => item.userId === uid && !isGenericUserName(item.authorName),
+  );
+  return review?.authorName || "";
+}
+
+function getNameFromEmail(value) {
+  const localPart = normalizeEmail(value)
+    .split("@")[0]
+    .split("+")[0]
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!localPart) return "";
+
+  return localPart
+    .split(" ")
+    .map((part) => part.charAt(0).toLocaleUpperCase("it") + part.slice(1))
+    .join(" ");
+}
+
+function resolveConsentUserName(user) {
+  if (user.storedName) {
+    return { name: user.storedName, source: "Nome dal profilo" };
+  }
+
+  const reviewName = getReviewAuthorName(user.uid);
+  if (reviewName) {
+    return { name: reviewName, source: "Nome recuperato dalle recensioni" };
+  }
+
+  const emailName = getNameFromEmail(user.email || user.accountEmail);
+  if (emailName) {
+    return { name: emailName, source: "Nome ricavato dall’email" };
+  }
+
+  return { name: "Nome non disponibile", source: "Profilo senza nome" };
 }
 
 function normalizeUser(snapshot) {
@@ -118,7 +198,7 @@ function normalizeUser(snapshot) {
   const email = normalizeEmail(data.marketingEmail || data.email);
   return {
     uid: snapshot.id,
-    name: getDisplayName(data),
+    storedName: getStoredDisplayName(data),
     email,
     accountEmail: normalizeEmail(data.email),
     updatedAt: data.marketingConsentUpdatedAt || data.updatedAt || null,
@@ -131,13 +211,18 @@ function getUniqueValidEmails(users = allConsentUsers) {
 }
 
 function currentFilteredUsers() {
-  const search = elements.searchInput.value.trim().toLocaleLowerCase("it");
+  const search = normalizeSearchText(elements.searchInput.value);
   if (!search) return allConsentUsers;
   return allConsentUsers.filter((user) =>
-    [user.name, user.email, user.accountEmail, user.uid]
-      .join(" ")
-      .toLocaleLowerCase("it")
-      .includes(search),
+    normalizeSearchText(
+      [
+        resolveConsentUserName(user).name,
+        user.storedName,
+        user.email,
+        user.accountEmail,
+        user.uid,
+      ].join(" "),
+    ).includes(search),
   );
 }
 
@@ -156,17 +241,20 @@ function renderUsers() {
 
   users.forEach((user) => {
     const row = document.createElement("tr");
+    const resolvedName = resolveConsentUserName(user);
 
     const userCell = document.createElement("td");
     const name = document.createElement("span");
     const accountEmail = document.createElement("span");
     name.className = "user-name";
-    name.textContent = user.name;
+    name.textContent = resolvedName.name;
     accountEmail.className = "user-secondary";
-    accountEmail.textContent =
-      user.accountEmail && user.accountEmail !== user.email
-        ? `Account: ${user.accountEmail}`
-        : "Profilo Firebase";
+
+    const secondaryDetails = [resolvedName.source];
+    if (user.accountEmail && user.accountEmail !== user.email) {
+      secondaryDetails.push(`Account: ${user.accountEmail}`);
+    }
+    accountEmail.textContent = secondaryDetails.join(" · ");
     userCell.append(name, accountEmail);
 
     const emailCell = createCell(
@@ -208,6 +296,338 @@ function updateStats() {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date());
+}
+
+function normalizeReview(snapshot) {
+  const data = snapshot.data();
+  const pathParts = snapshot.ref.path.split("/");
+  const nestedClubId =
+    pathParts[0] === "clubs" && pathParts[2] === "reviews"
+      ? pathParts[1]
+      : "";
+  const clubId = String(data.targetId || data.clubId || nestedClubId || "");
+  const rawRating = Number(data.rating);
+  const rating = Number.isFinite(rawRating)
+    ? Math.min(5, Math.max(1, Math.round(rawRating)))
+    : null;
+
+  return {
+    id: snapshot.id,
+    ref: snapshot.ref,
+    path: snapshot.ref.path,
+    authorName: String(
+      data.authorName ||
+        data.displayName ||
+        data.userName ||
+        data.username ||
+        "Utente Jazagora",
+    ).trim(),
+    userId: String(data.userId || snapshot.id),
+    rating,
+    comment: String(data.comment || "").trim(),
+    clubId,
+    embeddedClubName: String(
+      data.clubName || data.venueName || data.targetName || "",
+    ).trim(),
+    createdAt: data.createdAt || data.updatedAt || null,
+    status: String(data.status || "—"),
+    sortDate: data.updatedAt || data.createdAt || null,
+  };
+}
+
+function getReviewClubName(review) {
+  return (
+    clubNamesById.get(review.clubId) ||
+    review.embeddedClubName ||
+    review.clubId ||
+    "Locale non disponibile"
+  );
+}
+
+function createReviewUserCell(review) {
+  const cell = document.createElement("td");
+  cell.dataset.label = "Utente";
+
+  const name = document.createElement("span");
+  name.className = "user-name";
+  name.textContent = review.authorName || "Utente Jazagora";
+
+  const identifier = document.createElement("span");
+  identifier.className = "user-secondary";
+  identifier.textContent = `ID: ${review.userId}`;
+  identifier.title = review.userId;
+
+  cell.append(name, identifier);
+  return cell;
+}
+
+function createRatingCell(rating) {
+  const cell = document.createElement("td");
+  cell.dataset.label = "Voto";
+  cell.className = "review-rating";
+  cell.setAttribute(
+    "aria-label",
+    rating ? `${rating} stelle su 5` : "Voto non disponibile",
+  );
+
+  if (!rating) {
+    cell.textContent = "—";
+    return cell;
+  }
+
+  const stars = document.createElement("span");
+  stars.className = "review-stars";
+  stars.setAttribute("aria-hidden", "true");
+  stars.textContent = "★".repeat(rating) + "☆".repeat(5 - rating);
+
+  const numeric = document.createElement("span");
+  numeric.className = "review-rating-number";
+  numeric.textContent = `${rating}/5`;
+
+  cell.append(stars, numeric);
+  return cell;
+}
+
+function createReviewActionsCell(review) {
+  const cell = document.createElement("td");
+  cell.dataset.label = "Azioni";
+  cell.className = "review-actions";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "review-delete-button";
+  button.textContent = "Elimina";
+  button.setAttribute(
+    "aria-label",
+    `Elimina la recensione di ${review.authorName}`,
+  );
+  button.addEventListener("click", () => openDeleteReviewDialog(review));
+
+  cell.append(button);
+  return cell;
+}
+
+function openDeleteReviewDialog(review) {
+  pendingReviewDelete = review;
+  const ratingLabel = review.rating ? `${review.rating}/5 stelle` : "senza voto";
+  const commentPreview = review.comment
+    ? review.comment.slice(0, 180) + (review.comment.length > 180 ? "…" : "")
+    : "Commento non disponibile";
+
+  elements.deleteReviewSummary.textContent = [
+    review.authorName,
+    ratingLabel,
+    getReviewClubName(review),
+    `“${commentPreview}”`,
+  ].join("\n");
+  elements.confirmDeleteReviewButton.disabled = false;
+  elements.confirmDeleteReviewButton.textContent = "Elimina definitivamente";
+  elements.deleteReviewDialog.showModal();
+}
+
+function closeDeleteReviewDialog() {
+  if (elements.deleteReviewDialog.open) elements.deleteReviewDialog.close();
+  pendingReviewDelete = null;
+}
+
+async function deleteSelectedReview() {
+  if (!pendingReviewDelete?.ref) return;
+
+  const review = pendingReviewDelete;
+  elements.confirmDeleteReviewButton.disabled = true;
+  elements.cancelDeleteReviewButton.disabled = true;
+  elements.confirmDeleteReviewButton.textContent = "Eliminazione…";
+
+  try {
+    await deleteDoc(review.ref);
+    closeDeleteReviewDialog();
+    showToast("Recensione eliminata definitivamente.");
+  } catch (error) {
+    console.error("Review deletion failed:", error);
+    elements.confirmDeleteReviewButton.disabled = false;
+    elements.confirmDeleteReviewButton.textContent = "Elimina definitivamente";
+    showToast("Eliminazione non riuscita. Verifica i permessi amministrativi.");
+  } finally {
+    elements.cancelDeleteReviewButton.disabled = false;
+  }
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("it")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+function getReviewClubFilterKey(review) {
+  return review.clubId || `name:${normalizeSearchText(getReviewClubName(review))}`;
+}
+
+function updateReviewClubFilterOptions() {
+  const selectedValue = elements.reviewClubFilter.value;
+  const clubs = new Map();
+
+  allReviews.forEach((review) => {
+    clubs.set(getReviewClubFilterKey(review), getReviewClubName(review));
+  });
+
+  const firstOption = document.createElement("option");
+  firstOption.value = "";
+  firstOption.textContent = "Tutti i locali";
+
+  const options = [...clubs.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], "it", { sensitivity: "base" }))
+    .map(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      return option;
+    });
+
+  elements.reviewClubFilter.replaceChildren(firstOption, ...options);
+  elements.reviewClubFilter.value = clubs.has(selectedValue) ? selectedValue : "";
+}
+
+function reviewFiltersAreActive() {
+  return Boolean(
+    elements.reviewSearchInput.value.trim() ||
+      elements.reviewRatingFilter.value ||
+      elements.reviewClubFilter.value,
+  );
+}
+
+function currentFilteredReviews() {
+  const search = normalizeSearchText(elements.reviewSearchInput.value);
+  const rating = elements.reviewRatingFilter.value;
+  const club = elements.reviewClubFilter.value;
+
+  return allReviews.filter((review) => {
+    if (rating && String(review.rating) !== rating) return false;
+    if (club && getReviewClubFilterKey(review) !== club) return false;
+    if (!search) return true;
+
+    return normalizeSearchText(
+      [
+        review.authorName,
+        review.userId,
+        review.id,
+        review.comment,
+        getReviewClubName(review),
+        formatDate(review.createdAt),
+      ].join(" "),
+    ).includes(search);
+  });
+}
+
+function resetReviewFilters() {
+  elements.reviewSearchInput.value = "";
+  elements.reviewRatingFilter.value = "";
+  elements.reviewClubFilter.value = "";
+  renderReviews();
+}
+
+function renderReviews() {
+  updateReviewClubFilterOptions();
+  const reviews = currentFilteredReviews();
+  const filtersActive = reviewFiltersAreActive();
+  const fragment = document.createDocumentFragment();
+  elements.reviewTableBody.replaceChildren();
+
+  reviews.forEach((review) => {
+    const row = document.createElement("tr");
+    row.append(
+      createReviewUserCell(review),
+      createRatingCell(review.rating),
+      createCell(
+        "Commento",
+        review.comment || "Commento non disponibile",
+        "review-comment",
+      ),
+      createCell("Locale", getReviewClubName(review), "review-club"),
+      createCell("Data", formatDate(review.createdAt), "review-date"),
+      createReviewActionsCell(review),
+    );
+    row.title = `Recensione ${review.id} · ${review.status}`;
+    fragment.append(row);
+  });
+
+  elements.reviewTableBody.append(fragment);
+  elements.reviewEmptyState.hidden = reviews.length > 0;
+  elements.reviewEmptyTitle.textContent =
+    allReviews.length > 0 ? "Nessun risultato" : "Nessuna recensione";
+  elements.reviewEmptyDescription.textContent =
+    allReviews.length > 0
+      ? "Modifica la ricerca o azzera i filtri applicati."
+      : "Le nuove recensioni compariranno qui in tempo reale.";
+  elements.reviewResultSummary.textContent = allReviews.length
+    ? filtersActive
+      ? `${reviews.length} risultati su ${allReviews.length} recensioni.`
+      : `${allReviews.length} recensioni sincronizzate da Firestore.`
+    : "Nessuna recensione presente.";
+  elements.resetReviewFilters.disabled = !filtersActive;
+  elements.reviewCount.textContent = String(allReviews.length);
+  elements.reviewLastSync.textContent = new Intl.DateTimeFormat("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date());
+}
+
+function subscribeToClubs() {
+  unsubscribeClubs?.();
+
+  const clubsQuery = query(
+    collection(db, "clubs"),
+    where("status", "==", "published"),
+  );
+
+  unsubscribeClubs = onSnapshot(
+    clubsQuery,
+    (snapshot) => {
+      clubNamesById = new Map(
+        snapshot.docs.map((club) => {
+          const data = club.data();
+          return [
+            club.id,
+            String(data.name || data.title || club.id).trim(),
+          ];
+        }),
+      );
+      renderReviews();
+    },
+    (error) => {
+      console.error("Firestore club listener failed:", error);
+      clubNamesById = new Map();
+      renderReviews();
+    },
+  );
+}
+
+function subscribeToReviews() {
+  unsubscribeReviews?.();
+  setReviewConnectionStatus("Connessione…");
+
+  unsubscribeReviews = onSnapshot(
+    collectionGroup(db, "reviews"),
+    (snapshot) => {
+      allReviews = snapshot.docs.map(normalizeReview).sort((a, b) => {
+        const aDate = dateFromFirestore(a.sortDate)?.getTime() || 0;
+        const bDate = dateFromFirestore(b.sortDate)?.getTime() || 0;
+        return bDate - aDate || a.path.localeCompare(b.path, "it");
+      });
+      setReviewConnectionStatus("Aggiornato in tempo reale");
+      renderReviews();
+      renderUsers();
+    },
+    (error) => {
+      console.error("Firestore review listener failed:", error);
+      setReviewConnectionStatus("Accesso ai dati negato", true);
+      elements.reviewResultSummary.textContent =
+        "Impossibile leggere le recensioni. Verifica il claim admin e le regole Firestore.";
+      showToast("Lettura recensioni non autorizzata.");
+    },
+  );
 }
 
 function subscribeToConsents() {
@@ -270,8 +690,18 @@ function showLogin() {
   elements.dashboardView.hidden = true;
   elements.adminEmail.textContent = "";
   allConsentUsers = [];
+  allReviews = [];
+  clubNamesById = new Map();
+  elements.reviewSearchInput.value = "";
+  elements.reviewRatingFilter.value = "";
+  elements.reviewClubFilter.value = "";
+  closeDeleteReviewDialog();
   unsubscribeUsers?.();
   unsubscribeUsers = null;
+  unsubscribeReviews?.();
+  unsubscribeReviews = null;
+  unsubscribeClubs?.();
+  unsubscribeClubs = null;
 }
 
 function showDashboard(user) {
@@ -279,6 +709,8 @@ function showDashboard(user) {
   elements.dashboardView.hidden = false;
   elements.adminEmail.textContent = user.email || "Amministratore";
   subscribeToConsents();
+  subscribeToClubs();
+  subscribeToReviews();
 }
 
 elements.loginButton.addEventListener("click", async () => {
@@ -311,6 +743,27 @@ elements.loginButton.addEventListener("click", async () => {
 elements.logoutButton.addEventListener("click", () => signOut(auth));
 elements.searchInput.addEventListener("input", renderUsers);
 elements.copyEmailsButton.addEventListener("click", copyEmails);
+elements.reviewSearchInput.addEventListener("input", renderReviews);
+elements.reviewRatingFilter.addEventListener("change", renderReviews);
+elements.reviewClubFilter.addEventListener("change", renderReviews);
+elements.resetReviewFilters.addEventListener("click", resetReviewFilters);
+elements.cancelDeleteReviewButton.addEventListener(
+  "click",
+  closeDeleteReviewDialog,
+);
+elements.confirmDeleteReviewButton.addEventListener(
+  "click",
+  deleteSelectedReview,
+);
+elements.deleteReviewDialog.addEventListener("close", () => {
+  pendingReviewDelete = null;
+});
+elements.deleteReviewDialog.addEventListener("cancel", () => {
+  pendingReviewDelete = null;
+});
+elements.deleteReviewDialog.addEventListener("click", (event) => {
+  if (event.target === elements.deleteReviewDialog) closeDeleteReviewDialog();
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -336,3 +789,4 @@ onAuthStateChanged(auth, async (user) => {
     await signOut(auth);
   }
 });
+

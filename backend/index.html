@@ -109,6 +109,11 @@
             <span>Ultimo aggiornamento</span>
             <strong id="lastSync">—</strong>
           </article>
+          <article class="stat-card">
+            <span>Recensioni sincronizzate</span>
+            <strong id="reviewCount">0</strong>
+            <small id="reviewLastSync" class="stat-detail">—</small>
+          </article>
         </section>
 
         <section class="toolbar" aria-label="Strumenti elenco">
@@ -165,8 +170,75 @@
           </div>
         </section>
 
+        <section class="data-card reviews-card" aria-labelledby="reviewsTitle">
+          <div class="data-heading">
+            <div>
+              <h2 id="reviewsTitle">Recensioni</h2>
+              <p id="reviewResultSummary">Nessun dato caricato.</p>
+            </div>
+            <span id="reviewConnectionStatus" class="live-label">
+              <span class="status-dot" aria-hidden="true"></span>
+              Connessione…
+            </span>
+          </div>
+
+          <div class="review-toolbar" aria-label="Ricerca e filtri recensioni">
+            <label class="search-box review-search" for="reviewSearchInput">
+              <span aria-hidden="true">⌕</span>
+              <input
+                id="reviewSearchInput"
+                type="search"
+                autocomplete="off"
+                placeholder="Cerca utente, commento o locale"
+              />
+            </label>
+            <label class="filter-field" for="reviewRatingFilter">
+              <span>Voto</span>
+              <select id="reviewRatingFilter">
+                <option value="">Tutte le stelle</option>
+                <option value="5">5 stelle</option>
+                <option value="4">4 stelle</option>
+                <option value="3">3 stelle</option>
+                <option value="2">2 stelle</option>
+                <option value="1">1 stella</option>
+              </select>
+            </label>
+            <label class="filter-field" for="reviewClubFilter">
+              <span>Locale</span>
+              <select id="reviewClubFilter">
+                <option value="">Tutti i locali</option>
+              </select>
+            </label>
+            <button id="resetReviewFilters" class="ghost-button filter-reset" type="button" disabled>
+              Azzera filtri
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Utente</th>
+                  <th>Stelle</th>
+                  <th>Commento</th>
+                  <th>Locale</th>
+                  <th>Data</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="reviewTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="reviewEmptyState" class="empty-state">
+            <span aria-hidden="true">☆</span>
+            <h3 id="reviewEmptyTitle">Nessuna recensione</h3>
+            <p id="reviewEmptyDescription">Le nuove recensioni compariranno qui in tempo reale.</p>
+          </div>
+        </section>
+
         <footer class="dashboard-footer">
-          <span>Solo lettura · Nessuna email viene inviata dal pannello</span>
+          <span>Accesso amministrativo · Le eliminazioni richiedono conferma</span>
           <a href="https://jazagora.com/privacy-policy/" target="_blank" rel="noreferrer">
             Privacy Policy
           </a>
@@ -174,7 +246,33 @@
       </section>
     </main>
 
+    <dialog
+      id="deleteReviewDialog"
+      class="confirm-dialog"
+      aria-labelledby="deleteReviewTitle"
+      aria-describedby="deleteReviewDescription"
+    >
+      <div class="confirm-dialog-content">
+        <span class="danger-icon" aria-hidden="true">!</span>
+        <p class="eyebrow">AZIONE IRREVERSIBILE</p>
+        <h2 id="deleteReviewTitle">Eliminare definitivamente la recensione?</h2>
+        <p id="deleteReviewDescription">
+          La recensione verrà rimossa da Firestore e non potrà essere recuperata.
+        </p>
+        <div id="deleteReviewSummary" class="delete-review-summary"></div>
+        <div class="confirm-dialog-actions">
+          <button id="cancelDeleteReviewButton" class="ghost-button" type="button">
+            Annulla
+          </button>
+          <button id="confirmDeleteReviewButton" class="danger-button" type="button">
+            Elimina definitivamente
+          </button>
+        </div>
+      </div>
+    </dialog>
+
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
+
