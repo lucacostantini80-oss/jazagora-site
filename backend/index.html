@@ -125,7 +125,7 @@
             </span>
           </div>
 
-          <div class="table-wrap">
+          <div id="consentTableViewport" class="table-wrap table-viewport">
             <table>
               <thead>
                 <tr>
@@ -138,6 +138,13 @@
               </thead>
               <tbody id="consentTableBody"></tbody>
             </table>
+          </div>
+
+          <div id="consentTableControls" class="table-controls" hidden>
+            <span>5 utenti visibili alla volta · scorri l’elenco</span>
+            <button id="toggleConsentTable" class="table-toggle" type="button">
+              Mostra tutti
+            </button>
           </div>
 
           <div id="emptyState" class="empty-state">
@@ -191,7 +198,7 @@
             </button>
           </div>
 
-          <div class="table-wrap">
+          <div id="reviewTableViewport" class="table-wrap table-viewport">
             <table>
               <thead>
                 <tr>
@@ -205,6 +212,13 @@
               </thead>
               <tbody id="reviewTableBody"></tbody>
             </table>
+          </div>
+
+          <div id="reviewTableControls" class="table-controls" hidden>
+            <span>5 recensioni visibili alla volta · scorri l’elenco</span>
+            <button id="toggleReviewTable" class="table-toggle" type="button">
+              Mostra tutte
+            </button>
           </div>
 
           <div id="reviewEmptyState" class="empty-state">

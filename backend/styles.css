@@ -590,6 +590,60 @@ h1 {
   overflow-x: auto;
 }
 
+.table-viewport {
+  --compact-table-height: 390px;
+  max-height: var(--compact-table-height);
+  overflow: auto;
+  scrollbar-color: rgba(255, 202, 99, 0.72) rgba(166, 108, 255, 0.08);
+  scrollbar-width: thin;
+  transition: max-height 220ms ease;
+}
+
+.table-viewport.expanded {
+  max-height: none;
+}
+
+.table-viewport thead {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: #210d33;
+  box-shadow: 0 1px 0 rgba(166, 108, 255, 0.18);
+}
+
+.table-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 24px;
+  border-top: 1px solid rgba(166, 108, 255, 0.12);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.table-controls[hidden] {
+  display: none;
+}
+
+.table-toggle {
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 1px solid rgba(255, 202, 99, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 202, 99, 0.08);
+  color: var(--gold);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.table-toggle:hover {
+  border-color: rgba(255, 202, 99, 0.62);
+  background: rgba(255, 202, 99, 0.14);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -849,6 +903,25 @@ tbody tr:hover {
 
   .table-wrap {
     overflow: visible;
+  }
+
+  .table-viewport {
+    --compact-table-height: 740px;
+    overflow-y: auto;
+  }
+
+  .table-viewport.expanded {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .table-viewport thead {
+    position: absolute;
+  }
+
+  .table-controls {
+    align-items: flex-start;
+    padding: 13px 20px;
   }
 
   table,

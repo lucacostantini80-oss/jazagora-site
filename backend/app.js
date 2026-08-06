@@ -69,15 +69,23 @@ const elements = {
   searchInput: document.querySelector("#searchInput"),
   copyEmailsButton: document.querySelector("#copyEmailsButton"),
   consentTableBody: document.querySelector("#consentTableBody"),
+  consentTableViewport: document.querySelector("#consentTableViewport"),
+  consentTableControls: document.querySelector("#consentTableControls"),
+  toggleConsentTable: document.querySelector("#toggleConsentTable"),
   emptyState: document.querySelector("#emptyState"),
   resultSummary: document.querySelector("#resultSummary"),
+  reviewTableViewport: document.querySelector("#reviewTableViewport"),
+  reviewTableControls: document.querySelector("#reviewTableControls"),
+  toggleReviewTable: document.querySelector("#toggleReviewTable"),
   toast: document.querySelector("#toast"),
 };
 
 let allConsentUsers = [];
 let allReviews = [];
+let userProfilesByUid = new Map();
 let clubNamesById = new Map();
 let unsubscribeUsers = null;
+let unsubscribeUserProfiles = null;
 let unsubscribeReviews = null;
 let unsubscribeClubs = null;
 let pendingReviewDelete = null;
@@ -132,11 +140,16 @@ function formatDate(value) {
 }
 
 function getStoredDisplayName(data) {
+  const composedName = [data.firstName, data.lastName]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" ");
   const candidates = [
     data.displayName,
     data.name,
     data.fullName,
     data.username,
+    composedName,
   ];
   const name = candidates.find((value) => String(value || "").trim());
   return name ? String(name).trim() : "";
@@ -177,7 +190,7 @@ function getNameFromEmail(value) {
 
 function resolveConsentUserName(user) {
   if (user.storedName) {
-    return { name: user.storedName, source: "Nome dal profilo" };
+    return { name: user.storedName, source: "Nome dal profilo Firestore" };
   }
 
   const reviewName = getReviewAuthorName(user.uid);
@@ -204,6 +217,34 @@ function normalizeUser(snapshot) {
     updatedAt: data.marketingConsentUpdatedAt || data.updatedAt || null,
     policyVersion: data.marketingConsentPolicyVersion || "—",
   };
+}
+
+function getReviewDisplayName(review) {
+  const profileName = userProfilesByUid.get(review.userId)?.storedName;
+  if (profileName) return profileName;
+  if (!isGenericUserName(review.authorName)) return review.authorName;
+  return "Utente Jazagora";
+}
+
+function getReviewNameSource(review) {
+  if (userProfilesByUid.get(review.userId)?.storedName) return "Profilo Firestore";
+  if (!isGenericUserName(review.authorName)) return "Nome salvato nella recensione";
+  return "Nome non salvato";
+}
+
+function updateCompactTable(viewport, controls, button, resultCount, labels) {
+  const hasOverflow = resultCount > 5;
+  controls.hidden = !hasOverflow;
+  if (!hasOverflow) {
+    viewport.classList.remove("expanded");
+    button.textContent = labels.expand;
+  }
+}
+
+function toggleCompactTable(viewport, button, labels) {
+  const expanded = viewport.classList.toggle("expanded");
+  button.textContent = expanded ? labels.collapse : labels.expand;
+  if (!expanded) viewport.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function getUniqueValidEmails(users = allConsentUsers) {
@@ -272,6 +313,14 @@ function renderUsers() {
   });
 
   elements.consentTableBody.append(fragment);
+  elements.consentTableViewport.scrollTop = 0;
+  updateCompactTable(
+    elements.consentTableViewport,
+    elements.consentTableControls,
+    elements.toggleConsentTable,
+    users.length,
+    { expand: "Mostra tutti", collapse: "Riduci elenco" },
+  );
   elements.emptyState.hidden = users.length > 0;
   elements.resultSummary.textContent =
     users.length === allConsentUsers.length
@@ -350,11 +399,11 @@ function createReviewUserCell(review) {
 
   const name = document.createElement("span");
   name.className = "user-name";
-  name.textContent = review.authorName || "Utente Jazagora";
+  name.textContent = getReviewDisplayName(review);
 
   const identifier = document.createElement("span");
   identifier.className = "user-secondary";
-  identifier.textContent = `ID: ${review.userId}`;
+  identifier.textContent = `${getReviewNameSource(review)} · ID: ${review.userId}`;
   identifier.title = review.userId;
 
   cell.append(name, identifier);
@@ -399,7 +448,7 @@ function createReviewActionsCell(review) {
   button.textContent = "Elimina";
   button.setAttribute(
     "aria-label",
-    `Elimina la recensione di ${review.authorName}`,
+    `Elimina la recensione di ${getReviewDisplayName(review)}`,
   );
   button.addEventListener("click", () => openDeleteReviewDialog(review));
 
@@ -415,7 +464,7 @@ function openDeleteReviewDialog(review) {
     : "Commento non disponibile";
 
   elements.deleteReviewSummary.textContent = [
-    review.authorName,
+    getReviewDisplayName(review),
     ratingLabel,
     getReviewClubName(review),
     `“${commentPreview}”`,
@@ -509,6 +558,7 @@ function currentFilteredReviews() {
 
     return normalizeSearchText(
       [
+        getReviewDisplayName(review),
         review.authorName,
         review.userId,
         review.id,
@@ -553,6 +603,14 @@ function renderReviews() {
   });
 
   elements.reviewTableBody.append(fragment);
+  elements.reviewTableViewport.scrollTop = 0;
+  updateCompactTable(
+    elements.reviewTableViewport,
+    elements.reviewTableControls,
+    elements.toggleReviewTable,
+    reviews.length,
+    { expand: "Mostra tutte", collapse: "Riduci elenco" },
+  );
   elements.reviewEmptyState.hidden = reviews.length > 0;
   elements.reviewEmptyTitle.textContent =
     allReviews.length > 0 ? "Nessun risultato" : "Nessuna recensione";
@@ -630,6 +688,29 @@ function subscribeToReviews() {
   );
 }
 
+function subscribeToUserProfiles() {
+  unsubscribeUserProfiles?.();
+
+  unsubscribeUserProfiles = onSnapshot(
+    collection(db, "users"),
+    (snapshot) => {
+      userProfilesByUid = new Map(
+        snapshot.docs.map((profile) => {
+          const normalized = normalizeUser(profile);
+          return [normalized.uid, normalized];
+        }),
+      );
+      renderUsers();
+      renderReviews();
+    },
+    (error) => {
+      console.error("Firestore user profile listener failed:", error);
+      userProfilesByUid = new Map();
+      renderReviews();
+    },
+  );
+}
+
 function subscribeToConsents() {
   unsubscribeUsers?.();
   setConnectionStatus("Connessione…");
@@ -691,6 +772,7 @@ function showLogin() {
   elements.adminEmail.textContent = "";
   allConsentUsers = [];
   allReviews = [];
+  userProfilesByUid = new Map();
   clubNamesById = new Map();
   elements.reviewSearchInput.value = "";
   elements.reviewRatingFilter.value = "";
@@ -698,6 +780,8 @@ function showLogin() {
   closeDeleteReviewDialog();
   unsubscribeUsers?.();
   unsubscribeUsers = null;
+  unsubscribeUserProfiles?.();
+  unsubscribeUserProfiles = null;
   unsubscribeReviews?.();
   unsubscribeReviews = null;
   unsubscribeClubs?.();
@@ -708,6 +792,7 @@ function showDashboard(user) {
   elements.loginView.hidden = true;
   elements.dashboardView.hidden = false;
   elements.adminEmail.textContent = user.email || "Amministratore";
+  subscribeToUserProfiles();
   subscribeToConsents();
   subscribeToClubs();
   subscribeToReviews();
@@ -743,6 +828,20 @@ elements.loginButton.addEventListener("click", async () => {
 elements.logoutButton.addEventListener("click", () => signOut(auth));
 elements.searchInput.addEventListener("input", renderUsers);
 elements.copyEmailsButton.addEventListener("click", copyEmails);
+elements.toggleConsentTable.addEventListener("click", () =>
+  toggleCompactTable(
+    elements.consentTableViewport,
+    elements.toggleConsentTable,
+    { expand: "Mostra tutti", collapse: "Riduci elenco" },
+  ),
+);
+elements.toggleReviewTable.addEventListener("click", () =>
+  toggleCompactTable(
+    elements.reviewTableViewport,
+    elements.toggleReviewTable,
+    { expand: "Mostra tutte", collapse: "Riduci elenco" },
+  ),
+);
 elements.reviewSearchInput.addEventListener("input", renderReviews);
 elements.reviewRatingFilter.addEventListener("change", renderReviews);
 elements.reviewClubFilter.addEventListener("change", renderReviews);
