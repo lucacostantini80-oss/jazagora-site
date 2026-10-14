@@ -6,7 +6,7 @@
 .scan-card p { color: var(--muted); max-width: 850px; font-size: 14px; line-height: 1.65; margin: 0; }
 .scan-card .eyebrow { color: var(--gold); font-size: 11px; }
 .scan-card .scan-attempt { margin-top: 12px; color: var(--gold-soft); }
-.scan-link { text-decoration: none; white-space: nowrap; display: inline-block; flex-shrink: 0; }
+.scan-link { text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; flex-shrink: 0; }
 .oracle-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .oracle-stats .stat-card strong { font-size: 36px; }
 .oracle-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-purple); margin-top: 30px; padding: 0 0 12px; overflow-x: auto; }
