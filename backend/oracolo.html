@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#12051f">
   <title>Oracolo · Jazagora Backend</title>
   <link rel="stylesheet" href="./styles.css?v=20261014-oracolo-1">
-  <link rel="stylesheet" href="./oracolo.css?v=20261014-1">
+  <link rel="stylesheet" href="./oracolo.css?v=20261014-errors-1">
 </head>
 <body>
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -57,14 +57,21 @@
       <nav class="oracle-tabs" aria-label="Dati dell’Oracolo">
         <button class="oracle-tab active" type="button" data-view="cities" aria-pressed="true">Censimento città</button>
         <button class="oracle-tab" type="button" data-view="sources" aria-pressed="false">Fonti</button>
+        <button class="oracle-tab oracle-errors-tab" type="button" data-view="errors" aria-pressed="false">Errori <span id="errorTabCount" class="oracle-tab-count" aria-hidden="true">—</span></button>
         <button class="oracle-tab" type="button" data-view="events" aria-pressed="false">Eventi ammessi</button>
         <button class="oracle-tab" type="button" data-view="review" aria-pressed="false">Da verificare</button>
       </nav>
+      <aside id="errorOverview" class="oracle-error-overview" hidden aria-label="Riepilogo dei problemi di lettura">
+        <strong>Le fonti da controllare, in un solo posto.</strong>
+        <p id="errorOverviewText">I problemi compariranno quando il rapporto sarà disponibile.</p>
+        <small>Una fonte con zero concerti non è automaticamente una lettura fallita.</small>
+      </aside>
       <section class="oracle-filters" aria-label="Ricerca e filtri">
         <label class="search-box" for="searchInput"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" autocomplete="off" placeholder="Cerca città, fonte o concerto"></label>
         <label class="filter-field" for="regionFilter"><span>Regione</span><select id="regionFilter"><option value="">Tutte le regioni</option></select></label>
         <label id="cityFilterField" class="filter-field" for="cityFilter" hidden><span>Città</span><select id="cityFilter"><option value="">Tutte le città</option></select></label>
         <label id="statusFilterField" class="filter-field" for="statusFilter"><span>Mostra</span><select id="statusFilter"><option value="">Tutte le città</option></select></label>
+        <label id="errorTypeFilterField" class="filter-field" for="errorTypeFilter" hidden><span>Tipo di problema</span><select id="errorTypeFilter"><option value="">Tutti i tipi</option><option value="dns">Indirizzo non raggiungibile</option><option value="timeout">Timeout</option><option value="tls">Certificato / HTTPS</option><option value="forbidden">Accesso negato · 403</option><option value="not_found">Pagina non trovata · 404</option><option value="http">Altro errore HTTP</option><option value="connection">Connessione non riuscita</option><option value="other">Altro problema di lettura</option></select></label>
         <button id="resetFilters" class="ghost-button" type="button">Azzera filtri</button>
       </section>
       <section class="data-card" aria-labelledby="resultsTitle">
@@ -81,6 +88,7 @@
       <footer class="dashboard-footer"><span>Accesso amministrativo · Dati dell’Oracolo in sola lettura</span></footer>
     </section>
   </main>
-  <script type="module" src="./oracolo.js?v=20261014-1"></script>
+  <script type="module" src="./oracolo.js?v=20261014-errors-1"></script>
 </body>
 </html>
+

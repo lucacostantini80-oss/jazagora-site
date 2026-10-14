@@ -20,6 +20,28 @@ const date = value => { const parsed = new Date(value); return value && !Number.
 const eventDate = value => { if (!value) return 'Data da verificare'; const parsed = new Date(value.length === 10 ? `${value}T12:00:00+01:00` : value); return Number.isNaN(parsed.getTime()) ? 'Data da verificare' : new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'medium' }).format(parsed); };
 const statusLabels = { ok: 'Lettura riuscita', partial: 'Lettura parziale', failed: 'Lettura fallita', not_scanned: 'Non letta in questa raccolta' };
 const badge = status => `<span class="oracle-status ${esc(status || 'not_scanned')}">${esc(statusLabels[status] || statusLabels.not_scanned)}</span>`;
+const errorTypes = {
+  dns: ['Indirizzo non raggiungibile', 'Il nome del sito non viene risolto.'],
+  timeout: ['Timeout', 'Il sito non ha risposto entro il tempo previsto.'],
+  tls: ['Certificato o connessione HTTPS', 'La connessione HTTPS non supera i controlli di sicurezza.'],
+  forbidden: ['Accesso negato · 403', 'Il sito ha rifiutato la richiesta di lettura.'],
+  not_found: ['Pagina non trovata · 404', 'Il collegamento letto non porta a una pagina disponibile.'],
+  http: ['Altro errore HTTP', 'Il sito ha restituito una risposta di errore.'],
+  connection: ['Connessione non riuscita', 'Non è stato possibile stabilire la connessione al sito.'],
+  other: ['Altro problema di lettura', 'Il rapporto segnala una lettura incompleta o non riuscita.'],
+};
+const hasReadingIssue = row => ['failed', 'partial'].includes(row.status) || Number(row.failedPages) > 0;
+function readingErrorType(row) {
+  const text = normalize(row.message);
+  if (/nameresolutionerror|failed to resolve|name or service not known|getaddrinfo|nodename nor servname/.test(text)) return 'dns';
+  if (/certificate|sslerror|sslcert|\[ssl:|tls|dh_key_too_small/.test(text)) return 'tls';
+  if (/\b403\b|forbidden/.test(text)) return 'forbidden';
+  if (/\b404\b|not found/.test(text)) return 'not_found';
+  if (/timed?\s*out|timeout/.test(text)) return 'timeout';
+  if (/\b[45]\d{2}\b.*(?:client error|server error)|(?:client error|server error).*\b[45]\d{2}\b/.test(text)) return 'http';
+  if (/connectionerror|newconnectionerror|connection refused|failed to establish|connection reset|network is unreachable/.test(text)) return 'connection';
+  return 'other';
+}
 const reasons = { ambiguous_concert_replica: 'Possibili concerti o repliche da distinguere', missing_date: 'Data da verificare', missing_title: 'Titolo da verificare', non_concert: 'Contenuto diverso da un concerto', no_jazz_evidence: 'Genere jazz da confermare', ambiguous_multi_day: 'Evento su più giorni da distinguere' };
 
 let report = null;
@@ -47,6 +69,8 @@ function resetReport() {
   el('scanTitle').textContent = 'In attesa dei risultati';
   el('scanDescription').textContent = 'Il rapporto compare al termine della prima scansione sincronizzata.';
   el('lastAttempt').hidden = true;
+  el('errorTabCount').textContent = '—';
+  el('errorOverviewText').textContent = 'I problemi compariranno quando il rapporto sarà disponibile.';
   el('tableBody').replaceChildren();
   el('pagination').hidden = true;
   message();
@@ -63,19 +87,26 @@ function updateFilters() {
   const cityRows = report?.cities || [];
   const sourceRows = report?.sources || [];
   options(el('regionFilter'), [...new Set([...cityRows, ...sourceRows].map(row => row.region).filter(Boolean))].sort((a,b) => a.localeCompare(b,'it')), 'Tutte le regioni');
-  options(el('cityFilter'), [...new Set([...(report?.events || []), ...(report?.review || [])].map(row => row.city).filter(Boolean))].sort((a,b) => a.localeCompare(b,'it')), 'Tutte le città', cityKey);
+  options(el('cityFilter'), [...new Set([...sourceRows, ...(report?.events || []), ...(report?.review || [])].map(row => row.city).filter(Boolean))].sort((a,b) => a.localeCompare(b,'it')), 'Tutte le città', cityKey);
 }
 
 function setView(next) {
+  if (next === 'errors' && view !== 'errors') {
+    for (const id of ['searchInput', 'regionFilter', 'cityFilter']) el(id).value = '';
+  }
   view = next; page = 0;
   document.querySelectorAll('.oracle-tab').forEach(button => {
     const active = button.dataset.view === view;
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
-  el('cityFilterField').hidden = !['events', 'review'].includes(view);
-  el('statusFilterField').hidden = !['cities', 'sources'].includes(view);
-  const values = view === 'cities' ? [['', 'Tutte le città'], ['events','Con eventi ammessi'], ['gap','Magazine locale da cercare'], ['errors','Con errori di lettura']] : [['','Tutte le fonti'], ['ok','Letture riuscite'], ['partial','Letture parziali'], ['failed','Letture fallite'], ['not_scanned','Non lette']];
+  el('cityFilterField').hidden = !['events', 'review', 'errors'].includes(view);
+  el('statusFilterField').hidden = !['cities', 'sources', 'errors'].includes(view);
+  el('errorTypeFilterField').hidden = view !== 'errors';
+  el('errorOverview').hidden = view !== 'errors';
+  el('errorTypeFilter').value = '';
+  el('searchInput').placeholder = view === 'errors' ? 'Cerca fonte, città o messaggio di errore' : 'Cerca città, fonte o concerto';
+  const values = view === 'errors' ? [['','Tutti i problemi'], ['failed','Letture fallite'], ['partial','Letture parziali'], ['pages','Con errori di pagina']] : view === 'cities' ? [['', 'Tutte le città'], ['events','Con eventi ammessi'], ['gap','Magazine locale da cercare'], ['errors','Con errori di lettura']] : [['','Tutte le fonti'], ['ok','Letture riuscite'], ['partial','Letture parziali'], ['failed','Letture fallite'], ['not_scanned','Non lette']];
   el('statusFilter').innerHTML = values.map(([value,label]) => `<option value="${esc(value)}">${esc(label)}</option>`).join('');
   render();
 }
@@ -86,12 +117,19 @@ function filteredRows() {
   const city = el('cityFilter').value;
   const status = el('statusFilter').value;
   const regionsByCity = new Map((report?.cities || []).map(row => [cityKey(row.city), row.region]));
-  return (report?.[view] || []).filter(row => {
+  const baseRows = view === 'errors' ? (report?.sources || []).filter(hasReadingIssue) : report?.[view] || [];
+  return baseRows.filter(row => {
     const rowRegion = row.region || regionsByCity.get(cityKey(row.city)) || '';
     if (region && rowRegion !== region) return false;
-    if (search && !normalize([row.city,row.province,row.name,row.localMagazine,row.title,row.venueName,row.sourceId].join(' ')).includes(search)) return false;
-    if (['events','review'].includes(view) && city && cityKey(row.city) !== city) return false;
+    const searchable = [row.city,row.province,row.name,row.localMagazine,row.title,row.venueName,row.sourceId];
+    if (view === 'errors') searchable.push(row.message, errorTypes[readingErrorType(row)][0]);
+    if (search && !normalize(searchable.join(' ')).includes(search)) return false;
+    if (['events','review','errors'].includes(view) && city && cityKey(row.city) !== city) return false;
     if (view === 'sources' && status && row.status !== status) return false;
+    if (view === 'errors') {
+      if (status === 'pages' ? !(Number(row.failedPages) > 0) : status && row.status !== status) return false;
+      if (el('errorTypeFilter').value && readingErrorType(row) !== el('errorTypeFilter').value) return false;
+    }
     if (view === 'cities') {
       if (status === 'events' && !(row.admitted > 0)) return false;
       if (status === 'gap' && row.localMagazine) return false;
@@ -111,24 +149,32 @@ function sourceRow(row) {
   return `<tr><td><strong>${link(row.name,row.url)}</strong><small>${esc(row.sourceId)} · ${esc(row.feedId)}</small></td><td>${esc(row.city || 'Più città')}<small>${esc(row.region)}</small></td><td>${badge(row.status)}<small>${row.message ? esc(row.message) : row.checkedAt ? date(row.checkedAt) : 'Fuori dalla selezione di questa raccolta'}</small></td><td><span class="oracle-number">${count(row.admitted)}</span><small>${count(row.candidates)} candidati estratti</small></td><td>${count(row.pages)} pagine lette<small>${count(row.failedPages)} errori di pagina</small></td></tr>`;
 }
 
+function errorRow(row) {
+  const [label, description] = errorTypes[readingErrorType(row)];
+  const detail = row.message ? `<details class="oracle-error-details"><summary>Messaggio dal rapporto</summary><pre>${esc(row.message)}</pre></details>` : '<small>Il rapporto non contiene un messaggio di errore.</small>';
+  return `<tr><td><strong>${link(row.name,row.url)}</strong><small>${esc(row.sourceId)} · ${esc(row.feedId)}</small></td><td>${esc(row.city || 'Più città')}<small>${esc(row.region)}</small></td><td>${badge(row.status)}<small>Controllata: ${date(row.checkedAt)}</small></td><td><strong class="oracle-error-kind">${esc(label)}</strong><small>${esc(description)}</small>${detail}</td><td>${count(row.failedPages)} errori di pagina<small>${count(row.pages)} pagine lette · ${count(row.candidates)} candidati</small><small>${count(row.admitted)} eventi ammessi</small></td></tr>`;
+}
+
 function eventRow(row) {
   return `<tr><td><strong>${esc(row.title)}</strong><small>${esc(row.venueName || 'Luogo da verificare')}</small></td><td>${eventDate(row.startsAt)}<small>${esc(row.timeLabel || 'Orario non indicato')}</small></td><td>${esc(row.city)}<small>${esc(row.region)}</small></td><td>${link(row.sourceId || 'Sito della fonte', row.sourceUrl)}</td><td>${view === 'review' ? `<span class="oracle-status partial">Da verificare</span><small>${esc(reasons[row.reason] || row.reason || 'Dati da verificare')}</small>` : '<span class="oracle-status">Ammesso e salvato</span>'}</td></tr>`;
 }
 
 function render() {
-  const headings = { cities: ['Città', 'Eventi singoli ammessi', 'Agenda e lettura', 'Magazine locale', 'Altre fonti e copertura'], sources: ['Fonte', 'Città', 'Ultima lettura', 'Ammessi', 'Pagine'], events: ['Concerto', 'Quando', 'Dove', 'Fonte', 'Esito'], review: ['Candidato', 'Quando', 'Dove', 'Fonte', 'Verifica richiesta'] };
-  const titles = { cities: 'Censimento dei capoluoghi', sources: 'Fonti dell’Oracolo', events: 'Eventi ammessi nella raccolta', review: 'Candidati da verificare' };
+  const headings = { cities: ['Città', 'Eventi singoli ammessi', 'Agenda e lettura', 'Magazine locale', 'Altre fonti e copertura'], sources: ['Fonte', 'Città', 'Ultima lettura', 'Ammessi', 'Pagine'], errors: ['Fonte', 'Città', 'Esito della lettura', 'Tipo di problema e dettaglio', 'Pagine ed eventi'], events: ['Concerto', 'Quando', 'Dove', 'Fonte', 'Esito'], review: ['Candidato', 'Quando', 'Dove', 'Fonte', 'Verifica richiesta'] };
+  const titles = { cities: 'Censimento dei capoluoghi', sources: 'Fonti dell’Oracolo', errors: 'Errori e letture da controllare', events: 'Eventi ammessi nella raccolta', review: 'Candidati da verificare' };
   el('resultsTitle').textContent = titles[view];
   el('tableHead').innerHTML = '<tr>' + headings[view].map(label => `<th scope="col">${esc(label)}</th>`).join('') + '</tr>';
   const rows = filteredRows();
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   page = Math.min(page, totalPages - 1);
   const visible = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  el('tableBody').innerHTML = visible.map(view === 'cities' ? cityRow : view === 'sources' ? sourceRow : eventRow).join('');
+  el('tableBody').innerHTML = visible.map(view === 'cities' ? cityRow : view === 'sources' ? sourceRow : view === 'errors' ? errorRow : eventRow).join('');
   el('emptyState').hidden = rows.length > 0;
-  el('emptyTitle').textContent = report ? 'Nessun risultato' : 'In attesa della prima raccolta';
-  el('emptyDescription').textContent = report ? 'Nessun dato corrisponde ai filtri scelti. Seleziona un’altra città o azzera i filtri.' : 'La pagina si aggiornerà automaticamente quando il rapporto sarà disponibile.';
-  el('resultSummary').textContent = report ? `${count(rows.length)} risultati su ${count(report[view].length)} · raccolta del ${date(report.run.completedAt)}` : 'Nessun rapporto disponibile.';
+  const issueCount = (report?.sources || []).filter(hasReadingIssue).length;
+  const noIssues = report && view === 'errors' && issueCount === 0;
+  el('emptyTitle').textContent = noIssues ? 'Nessun errore di lettura segnalato' : report ? 'Nessun risultato' : 'In attesa della prima raccolta';
+  el('emptyDescription').textContent = noIssues ? 'L’ultima raccolta pubblicata non segnala letture fallite, parziali o errori di pagina.' : report ? 'Nessun dato corrisponde ai filtri scelti. Seleziona un’altra città o azzera i filtri.' : 'La pagina si aggiornerà automaticamente quando il rapporto sarà disponibile.';
+  el('resultSummary').textContent = report ? view === 'errors' ? `${count(rows.length)} risultati su ${count(issueCount)} fonti con problemi · ${count(report.sources.length)} fonti nel rapporto · raccolta del ${date(report.run.completedAt)}` : `${count(rows.length)} risultati su ${count(report[view].length)} · raccolta del ${date(report.run.completedAt)}` : 'Nessun rapporto disponibile.';
   el('pagination').hidden = totalPages <= 1;
   el('pageLabel').textContent = `Pagina ${page + 1} di ${totalPages}`;
   el('previousPage').disabled = page === 0;
@@ -144,7 +190,11 @@ function renderSummary() {
   el('capitalsWithEvents').textContent = count(s.capitalsWithEvents);
   el('capitalCount').textContent = `Su ${count(s.capitalCount)} capoluoghi censiti`;
   el('okCount').textContent = count(s.ok);
-  el('errorCount').textContent = count(s.partial + s.failed);
+  const issues = report.sources.filter(hasReadingIssue);
+  el('errorCount').textContent = count(issues.length);
+  el('errorTabCount').textContent = count(issues.length);
+  const other = issues.filter(row => !['failed', 'partial'].includes(row.status)).length;
+  el('errorOverviewText').textContent = `${count(issues.filter(row => row.status === 'failed').length)} letture fallite · ${count(issues.filter(row => row.status === 'partial').length)} parziali${other ? ` · ${count(other)} altre fonti con errori di pagina` : ''}. Dati dell’ultima raccolta pubblicata; il tipo di problema è riconosciuto dal messaggio del rapporto.`;
   el('errorDetail').textContent = `${count(s.partial)} parziali · ${count(s.failed)} fallite`;
   el('scanTitle').textContent = `Completata il ${date(report.run.completedAt)}`;
   el('scanDescription').textContent = `Raccolta ${report.run.event === 'schedule' ? 'giornaliera' : 'manuale'} · ${s.partialScan ? 'selezione parziale delle fonti' : 'tutte le fonti selezionate'} · ${count(s.admittedCount)} concerti ammessi e salvati. Orario italiano.`;
@@ -219,8 +269,8 @@ el('loginButton').addEventListener('click', async () => {
 el('logoutButton').addEventListener('click', () => signOut(auth));
 el('refreshButton').addEventListener('click', () => { if (auth.currentUser) { loadedRun = ''; subscribe(); } });
 document.querySelectorAll('.oracle-tab').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
-for (const id of ['searchInput','regionFilter','cityFilter','statusFilter']) el(id).addEventListener('input', () => { page = 0; render(); });
-el('resetFilters').addEventListener('click', () => { for (const id of ['searchInput','regionFilter','cityFilter','statusFilter']) el(id).value = ''; page = 0; render(); });
+for (const id of ['searchInput','regionFilter','cityFilter','statusFilter','errorTypeFilter']) el(id).addEventListener('input', () => { page = 0; render(); });
+el('resetFilters').addEventListener('click', () => { for (const id of ['searchInput','regionFilter','cityFilter','statusFilter','errorTypeFilter']) el(id).value = ''; page = 0; render(); });
 el('previousPage').addEventListener('click', () => { page = Math.max(0,page - 1); render(); });
 el('nextPage').addEventListener('click', () => { page += 1; render(); });
 el('tableBody').addEventListener('click', event => {
@@ -245,3 +295,4 @@ onAuthStateChanged(auth, async user => {
   } catch { await signOut(auth); el('authMessage').textContent = 'Impossibile verificare i permessi amministrativi.'; }
 });
 setView('cities');
+
