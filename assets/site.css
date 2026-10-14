@@ -121,9 +121,21 @@ img { display: block; max-width: 100%; height: auto; }
       position: relative;
       padding: var(--copy-start) 6% clamp(55px, 5cqw, 75px);
       isolation: isolate;
-      background: var(--ink-deep);
+      background: transparent;
     }
     .hero-art { position: absolute; z-index: -1; top: 0; left: 0; right: 0; padding-top: var(--art-top); background: #a186dd; }
+    /* Fade the complete artwork layer into the shared page canvas on three edges. */
+    .hero-art {
+      --edge-fade: clamp(14px, 3.5cqw, 48px);
+      -webkit-mask-image:
+        linear-gradient(90deg, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent),
+        linear-gradient(180deg, #000 72%, transparent 100%);
+      mask-image:
+        linear-gradient(90deg, transparent, #000 var(--edge-fade), #000 calc(100% - var(--edge-fade)), transparent),
+        linear-gradient(180deg, #000 72%, transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-composite: intersect;
+    }
     .hero-art img { display: block; width: 100%; height: auto; }
     .hero-art::after { content: ""; position: absolute; inset: var(--art-top) 0 -1px; background: linear-gradient(180deg, rgba(11,3,25,.05) 0%, rgba(11,3,25,.08) 35%, rgba(11,3,25,.1) 46%, rgba(11,3,25,.18) 56%, rgba(11,3,25,.38) 64%, rgba(11,3,25,.64) 72%, rgba(11,3,25,.82) 82%, rgba(11,3,25,.95) 93%, var(--ink-deep) 100%); }
 
