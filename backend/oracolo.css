@@ -1,0 +1,42 @@
+.oracle-shell { max-width: 1440px; }
+.oracle-heading h1 { font-size: clamp(38px, 5vw, 64px); margin: 6px 0 12px; letter-spacing: -.045em; }
+.oracle-intro { line-height: 1.65; }
+.scan-card { display: flex; gap: 28px; align-items: center; justify-content: space-between; padding: 26px 30px; border: 1px solid var(--border); border-radius: 24px; background: linear-gradient(115deg, rgba(68,29,99,.65), rgba(22,8,38,.8)); margin: 6px 0 24px; }
+.scan-card h2 { font-size: clamp(20px, 2.5vw, 28px); margin: 8px 0; letter-spacing: -.025em; }
+.scan-card p { color: var(--muted); max-width: 850px; font-size: 14px; line-height: 1.65; margin: 0; }
+.scan-card .eyebrow { color: var(--gold); font-size: 11px; }
+.scan-card .scan-attempt { margin-top: 12px; color: var(--gold-soft); }
+.scan-link { text-decoration: none; white-space: nowrap; display: inline-block; flex-shrink: 0; }
+.oracle-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.oracle-stats .stat-card strong { font-size: 36px; }
+.oracle-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-purple); margin-top: 30px; padding: 0 0 12px; overflow-x: auto; }
+.oracle-tab { border: 0; background: transparent; color: var(--muted); border-radius: 13px; padding: 12px 18px; font-weight: 650; white-space: nowrap; font-size: 14px; }
+.oracle-tab:hover { background: var(--surface-muted); color: var(--text); }
+.oracle-tab.active { background: rgba(247,199,94,.12); color: var(--gold-soft); }
+.oracle-filters { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin: 22px 0; }
+.oracle-filters .search-box { flex: 1 1 260px; }
+.oracle-filters .filter-field { flex: 0 1 210px; min-width: 170px; }
+.oracle-filters .ghost-button { min-height: 46px; }
+.oracle-table-wrap table { min-width: 900px; }
+.oracle-table-wrap th { white-space: nowrap; }
+.oracle-table-wrap td { vertical-align: top; padding-top: 20px; padding-bottom: 20px; }
+.oracle-table-wrap small { display: block; color: var(--muted); margin-top: 7px; font-size: 12px; line-height: 1.6; max-width: 320px; }
+.oracle-table-wrap a { color: var(--gold-soft); text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.oracle-table-wrap td:first-child strong { display: block; max-width: 370px; font-weight: 650; }
+.oracle-number { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--gold-soft); }
+.oracle-status { display: inline-flex; gap: 6px; align-items: center; padding: 5px 9px; border-radius: 8px; font-size: 11px; border: 1px solid rgba(52,223,194,.25); background: rgba(52,223,194,.08); color: var(--cyan); white-space: nowrap; }
+.oracle-status.partial { color: var(--gold-soft); border-color: var(--border); background: rgba(247,199,94,.08); }
+.oracle-status.failed { color: var(--danger); border-color: rgba(255,111,133,.25); background: rgba(255,111,133,.08); }
+.oracle-status.not_scanned { color: var(--muted); border-color: var(--border-purple); background: transparent; }
+.city-events-button { margin-top: 9px; padding: 0; border: 0; background: transparent; color: var(--gold-soft); font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.oracle-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-top: 1px solid var(--border-purple); color: var(--muted); font-size: 13px; }
+.oracle-notes { margin: 28px 4px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; }
+.oracle-notes p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.oracle-notes strong { display: block; color: var(--text); font-size: 13px; margin-bottom: 6px; }
+.oracle-message:empty { display: none; }
+.oracle-message.error { color: var(--danger); }
+.oracle-table-wrap[aria-busy=true] { opacity: .6; }
+[hidden] { display: none !important; }
+@media (max-width: 900px) { .scan-card { align-items: start; flex-direction: column; gap: 16px; } .oracle-notes { grid-template-columns: 1fr; gap: 18px; } }
+@media (max-width: 600px) { .oracle-stats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; } .oracle-stats .stat-card { padding: 16px; } .oracle-stats .stat-card strong { font-size: 30px; } .oracle-stats .stat-card span { font-size: 12px; } .scan-card { padding: 20px; } .oracle-filters .filter-field { flex: 1 1 140px; min-width: 120px; } .oracle-tab { padding: 10px 13px; font-size: 13px; } .oracle-pagination { padding: 16px 12px; flex-wrap: wrap; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

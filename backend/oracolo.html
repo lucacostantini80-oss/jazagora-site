@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#12051f">
+  <title>Oracolo · Jazagora Backend</title>
+  <link rel="stylesheet" href="./styles.css?v=20261014-oracolo-1">
+  <link rel="stylesheet" href="./oracolo.css?v=20261014-1">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <main class="page-shell oracle-shell">
+    <header class="brand-header">
+      <a class="brand" href="https://jazagora.com/" target="_blank" rel="noreferrer">
+        <img class="brand-mark-image" src="./jazagora-icon-no-arrow-exact.png" alt="" width="48" height="48">
+        <span><strong>Jazagora</strong><small>Backend riservato</small></span>
+      </a>
+      <nav class="backend-nav" aria-label="Sezioni del backend">
+        <a class="backend-nav-link" href="./">Consensi e recensioni</a>
+        <a class="backend-nav-link active" href="./oracolo.html" aria-current="page">Oracolo</a>
+      </nav>
+    </header>
+    <section id="loginView" class="auth-card" aria-labelledby="loginTitle">
+      <img class="auth-brand-icon" src="./jazagora-icon-no-arrow-exact.png" alt="" width="76" height="76">
+      <p class="eyebrow">ACCESSO PROTETTO</p>
+      <h1 id="loginTitle">L’universo dell’Oracolo</h1>
+      <p>Fonti, copertura delle città ed eventi dell’ultima raccolta. Accedi con il tuo account Google amministratore di Jazagora.</p>
+      <button id="loginButton" class="primary-button google-button" type="button">Continua con Google</button>
+      <p id="authMessage" class="message" role="status" aria-live="polite"></p>
+    </section>
+    <section id="dashboardView" class="dashboard" hidden>
+      <div class="dashboard-heading oracle-heading">
+        <div><p class="eyebrow">FONTI E CONCERTI · ITALIA</p><h1>Oracolo</h1><p class="oracle-intro">Le fonti restano. La musica si rinnova.<br>Segui la raccolta jazz, città per città.</p></div>
+        <div class="account-panel">
+          <span id="connectionStatus" class="status-pill" role="status"><span class="status-dot" aria-hidden="true"></span><span id="connectionLabel">Connessione…</span></span>
+          <span id="adminEmail" class="admin-email"></span>
+          <button id="logoutButton" class="ghost-button" type="button">Esci</button>
+        </div>
+      </div>
+      <section class="scan-card" aria-labelledby="scanTitle">
+        <div><p class="eyebrow">ULTIMA RACCOLTA PUBBLICATA</p><h2 id="scanTitle">In attesa dei risultati</h2><p id="scanDescription">Il rapporto compare al termine della prima scansione sincronizzata.</p><p id="lastAttempt" class="scan-attempt" hidden></p></div>
+        <a id="runLink" class="ghost-button scan-link" href="https://github.com/lucacostantini80-oss/jazagora-oracle/actions/workflows/daily-oracle.yml" target="_blank" rel="noopener noreferrer">Vedi raccolta su GitHub ↗</a>
+      </section>
+      <p id="dataMessage" class="message oracle-message" role="status" aria-live="polite"></p>
+      <section class="stats-grid oracle-stats" aria-label="Risultati dell’ultima raccolta">
+        <article class="stat-card"><span>Fonti registrate</span><strong id="sourceCount">—</strong><small id="scannedSources" class="stat-detail">—</small></article>
+        <article class="stat-card"><span>Eventi singoli ammessi</span><strong id="admittedCount">—</strong><small class="stat-detail">Concerti salvati dalla raccolta</small></article>
+        <article class="stat-card"><span>Da verificare</span><strong id="reviewCount">—</strong><small class="stat-detail">Esclusi dalla pubblicazione automatica</small></article>
+        <article class="stat-card"><span>Capoluoghi con eventi</span><strong id="capitalsWithEvents">—</strong><small id="capitalCount" class="stat-detail">—</small></article>
+        <article class="stat-card"><span>Letture riuscite</span><strong id="okCount">—</strong><small class="stat-detail">Fonti senza errori di lettura</small></article>
+        <article class="stat-card"><span>Fonti da controllare</span><strong id="errorCount">—</strong><small id="errorDetail" class="stat-detail">—</small></article>
+      </section>
+      <nav class="oracle-tabs" aria-label="Dati dell’Oracolo">
+        <button class="oracle-tab active" type="button" data-view="cities" aria-pressed="true">Censimento città</button>
+        <button class="oracle-tab" type="button" data-view="sources" aria-pressed="false">Fonti</button>
+        <button class="oracle-tab" type="button" data-view="events" aria-pressed="false">Eventi ammessi</button>
+        <button class="oracle-tab" type="button" data-view="review" aria-pressed="false">Da verificare</button>
+      </nav>
+      <section class="oracle-filters" aria-label="Ricerca e filtri">
+        <label class="search-box" for="searchInput"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" autocomplete="off" placeholder="Cerca città, fonte o concerto"></label>
+        <label class="filter-field" for="regionFilter"><span>Regione</span><select id="regionFilter"><option value="">Tutte le regioni</option></select></label>
+        <label id="cityFilterField" class="filter-field" for="cityFilter" hidden><span>Città</span><select id="cityFilter"><option value="">Tutte le città</option></select></label>
+        <label id="statusFilterField" class="filter-field" for="statusFilter"><span>Mostra</span><select id="statusFilter"><option value="">Tutte le città</option></select></label>
+        <button id="resetFilters" class="ghost-button" type="button">Azzera filtri</button>
+      </section>
+      <section class="data-card" aria-labelledby="resultsTitle">
+        <div class="data-heading"><div><h2 id="resultsTitle">Censimento dei capoluoghi</h2><p id="resultSummary">Nessun rapporto disponibile.</p></div><button id="refreshButton" class="ghost-button compact" type="button">Riconnetti</button></div>
+        <div class="table-wrap oracle-table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+        <div id="emptyState" class="empty-state"><span aria-hidden="true">◌</span><h3 id="emptyTitle">In attesa della prima raccolta</h3><p id="emptyDescription">La pagina si aggiornerà automaticamente quando il rapporto sarà disponibile.</p></div>
+        <div id="pagination" class="oracle-pagination" hidden><button id="previousPage" class="ghost-button" type="button">← Precedenti</button><span id="pageLabel"></span><button id="nextPage" class="ghost-button" type="button">Successivi →</button></div>
+      </section>
+      <aside class="oracle-notes">
+        <p><strong>Che cosa cambia ogni giorno?</strong> Gli eventi e i conteggi si riferiscono all’ultima raccolta completata e possono aumentare, diminuire o restare uguali. Sono il totale trovato in quella scansione, non solo i nuovi inserimenti.</p>
+        <p><strong>Come leggere il censimento.</strong> Le agende cittadine de Il Tacco di Bacco appartengono allo stesso editore. Magazine locali e fonti ufficiali completano la copertura. Uno zero non dimostra l’assenza di jazz nella città; una lettura fallita può lasciare incompleti i risultati.</p>
+        <p><strong>Aggiornamento automatico.</strong> Il rapporto viene sincronizzato dopo la raccolta. La data principale è l’ora di fine scansione in Italia, non l’ora di apertura della pagina. Gli eventi già presenti nell’app da raccolte precedenti possono essere più numerosi.</p>
+      </aside>
+      <footer class="dashboard-footer"><span>Accesso amministrativo · Dati dell’Oracolo in sola lettura</span></footer>
+    </section>
+  </main>
+  <script type="module" src="./oracolo.js?v=20261014-1"></script>
+</body>
+</html>
