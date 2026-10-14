@@ -18,7 +18,7 @@ const safeUrl = value => { try { const url = new URL(value); return ['http:', 'h
 const link = (label, value) => safeUrl(value) ? `<a href="${esc(safeUrl(value))}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>` : esc(label);
 const date = value => { const parsed = new Date(value); return value && !Number.isNaN(parsed.getTime()) ? new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'long', timeStyle: 'medium' }).format(parsed) : '—'; };
 const eventDate = value => { if (!value) return 'Data da verificare'; const parsed = new Date(value.length === 10 ? `${value}T12:00:00+01:00` : value); return Number.isNaN(parsed.getTime()) ? 'Data da verificare' : new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'medium' }).format(parsed); };
-const statusLabels = { ok: 'Lettura riuscita', partial: 'Lettura parziale', failed: 'Lettura fallita', not_scanned: 'Non letta in questa raccolta' };
+const statusLabels = { ok: 'Riuscita', partial: 'Parziale', failed: 'Fallita', not_scanned: 'Non letta' };
 const badge = status => `<span class="oracle-status ${esc(status || 'not_scanned')}">${esc(statusLabels[status] || statusLabels.not_scanned)}</span>`;
 const errorTypes = {
   dns: ['Indirizzo non raggiungibile', 'Il nome del sito non viene risolto.'],
@@ -145,14 +145,48 @@ function cityRow(row) {
   return `<tr><td><strong>${esc(row.city)}</strong><small>${esc(row.region)} · ${esc(row.province)}</small></td><td><span class="oracle-number">${count(row.admitted)}</span><small>${count(row.candidates)} candidati trovati · ${count(row.review)} da verificare</small>${row.admitted > 0 ? `<button class="city-events-button" type="button" data-city="${esc(cityKey(row.city))}">Vedi eventi di ${esc(row.city)} →</button>` : ''}</td><td>${link('Il Tacco di Bacco', row.agendaUrl)}<small>${count(row.scannedSources)} fonti lette su ${count(row.sourceCount)}</small>${badge(row.status)}</td><td>${row.localMagazine ? link(row.localMagazine, row.localMagazineUrl) : '<span>Magazine locale da cercare</span>'}<small>${esc(row.localMagazineStatus)}</small></td><td>${additional.length ? additional.map(source => link(source.name,source.url)).join('<br>') : 'Altre fonti cittadine da aggiungere'}<small>${esc(row.coverageNote)}</small></td></tr>`;
 }
 
+
+function sourceDetailButton(row) {
+  return '<td><button class="source-detail-button" type="button" data-source-id="' + esc(row.sourceId) +
+    '" data-feed-id="' + esc(row.feedId) + '" aria-label="Dettagli di ' + esc(row.name) + '">Dettagli</button></td>';
+}
+function closeSourceDetails() {
+  el('sourceDetailsDialog').close();
+  el('sourceDetailsBody').replaceChildren();
+}
+function showSourceDetails(row) {
+  el('sourceDetailsTitle').textContent = row.name;
+  const item = (label, value) => '<div><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>';
+  el('sourceDetailsBody').innerHTML = badge(row.status) +
+    '<dl class="source-detail-grid">' + item('Città', row.city || 'Più città') + item('Regione', row.region || '—') +
+    item('Pagine lette', count(row.pages)) + item('Errori di pagina', count(row.failedPages)) +
+    item('Candidati estratti', count(row.candidates)) + item('Eventi ammessi', count(row.admitted)) + '</dl>' +
+    '<p class="source-detail-id">' + esc(row.sourceId) + ' · ' + esc(row.feedId) + '</p>' +
+    '<p class="source-detail-id">Controllata: ' + esc(date(row.checkedAt)) + '</p>' +
+    (row.message ? '<pre class="source-detail-message">' + esc(row.message) + '</pre>' : '<p>Lettura completata senza errori segnalati.</p>') +
+    '<div class="source-dialog-links">' + (safeUrl(row.url) ? '<a class="ghost-button" href="' + esc(safeUrl(row.url)) + '" target="_blank" rel="noopener noreferrer">Apri fonte ↗</a>' : '') + '</div>';
+  el('sourceDetailsDialog').showModal();
+}
+el('closeSourceDetails').addEventListener('click', closeSourceDetails);
+el('sourceDetailsDialog').addEventListener('click', event => {
+  if (event.target === el('sourceDetailsDialog')) closeSourceDetails();
+});
+
 function sourceRow(row) {
-  return `<tr><td><strong>${link(row.name,row.url)}</strong><small>${esc(row.sourceId)} · ${esc(row.feedId)}</small></td><td>${esc(row.city || 'Più città')}<small>${esc(row.region)}</small></td><td>${badge(row.status)}<small>${row.message ? esc(row.message) : row.checkedAt ? date(row.checkedAt) : 'Fuori dalla selezione di questa raccolta'}</small></td><td><span class="oracle-number">${count(row.admitted)}</span><small>${count(row.candidates)} candidati estratti</small></td><td>${count(row.pages)} pagine lette<small>${count(row.failedPages)} errori di pagina</small></td></tr>`;
+  const issue = hasReadingIssue(row);
+  const note = issue ? (row.status === 'partial' && /^Riserva letta/.test(row.message)
+    ? 'Calendario di riserva letto' : errorTypes[readingErrorType(row)][0]) : '';
+  return '<tr><td><strong>' + link(row.name,row.url) + '</strong></td>' +
+    '<td>' + esc(row.city || 'Più città') + '</td>' +
+    '<td>' + badge(row.status) + (note ? '<small>' + esc(note) + '</small>' : '') + '</td>' +
+    '<td><span class="oracle-number">' + count(row.admitted) + '</span></td>' +
+    '<td>' + count(row.pages) + '</td>' + sourceDetailButton(row) + '</tr>';
 }
 
 function errorRow(row) {
   const [label, description] = errorTypes[readingErrorType(row)];
   const detail = row.message ? `<details class="oracle-error-details"><summary>Messaggio dal rapporto</summary><pre>${esc(row.message)}</pre></details>` : '<small>Il rapporto non contiene un messaggio di errore.</small>';
-  return `<tr><td><strong>${link(row.name,row.url)}</strong><small>${esc(row.sourceId)} · ${esc(row.feedId)}</small></td><td>${esc(row.city || 'Più città')}<small>${esc(row.region)}</small></td><td>${badge(row.status)}<small>Controllata: ${date(row.checkedAt)}</small></td><td><strong class="oracle-error-kind">${esc(label)}</strong><small>${esc(description)}</small>${detail}</td><td>${count(row.failedPages)} errori di pagina<small>${count(row.pages)} pagine lette · ${count(row.candidates)} candidati</small><small>${count(row.admitted)} eventi ammessi</small></td></tr>`;
+  return `<tr><td><strong>${link(row.name,row.url)}</strong><small>${esc(row.sourceId)} · ${esc(row.feedId)}</small></td><td>${esc(row.city || 'Più città')}<small>${esc(row.region)}</small></td><td>${badge(row.status)}<small>Controllata: ${date(row.checkedAt)}</small></td><td><strong class="oracle-error-kind">${esc(label)}</strong><small>${esc(description)}</small>${detail}</td><td>${count(row.failedPages)} errori di pagina<small>${count(row.pages)} pagine lette · ${count(row.candidates)} candidati</small><small>${count(row.admitted)} eventi ammessi</small></td>` + sourceDetailButton(row) + `</tr>`;
 }
 
 function eventRow(row) {
@@ -160,7 +194,7 @@ function eventRow(row) {
 }
 
 function render() {
-  const headings = { cities: ['Città', 'Eventi singoli ammessi', 'Agenda e lettura', 'Magazine locale', 'Altre fonti e copertura'], sources: ['Fonte', 'Città', 'Ultima lettura', 'Ammessi', 'Pagine'], errors: ['Fonte', 'Città', 'Esito della lettura', 'Tipo di problema e dettaglio', 'Pagine ed eventi'], events: ['Concerto', 'Quando', 'Dove', 'Fonte', 'Esito'], review: ['Candidato', 'Quando', 'Dove', 'Fonte', 'Verifica richiesta'] };
+  const headings = { cities: ['Città', 'Eventi singoli ammessi', 'Agenda e lettura', 'Magazine locale', 'Altre fonti e copertura'], sources: ['Fonte', 'Città', 'Esito lettura', 'Ammessi', 'Pagine', 'Azioni'], errors: ['Fonte', 'Città', 'Esito della lettura', 'Tipo di problema e dettaglio', 'Pagine ed eventi', 'Azioni'], events: ['Concerto', 'Quando', 'Dove', 'Fonte', 'Esito'], review: ['Candidato', 'Quando', 'Dove', 'Fonte', 'Verifica richiesta'] };
   const titles = { cities: 'Censimento dei capoluoghi', sources: 'Fonti dell’Oracolo', errors: 'Errori e letture da controllare', events: 'Eventi ammessi nella raccolta', review: 'Candidati da verificare' };
   el('resultsTitle').textContent = titles[view];
   el('tableHead').innerHTML = '<tr>' + headings[view].map(label => `<th scope="col">${esc(label)}</th>`).join('') + '</tr>';
@@ -196,10 +230,17 @@ function renderSummary() {
   const other = issues.filter(row => !['failed', 'partial'].includes(row.status)).length;
   el('errorOverviewText').textContent = `${count(issues.filter(row => row.status === 'failed').length)} letture fallite · ${count(issues.filter(row => row.status === 'partial').length)} parziali${other ? ` · ${count(other)} altre fonti con errori di pagina` : ''}. Dati dell’ultima raccolta pubblicata; il tipo di problema è riconosciuto dal messaggio del rapporto.`;
   el('errorDetail').textContent = `${count(s.partial)} parziali · ${count(s.failed)} fallite`;
-  el('scanTitle').textContent = `Completata il ${date(report.run.completedAt)}`;
-  el('scanDescription').textContent = `Raccolta ${report.run.event === 'schedule' ? 'giornaliera' : 'manuale'} · ${s.partialScan ? 'selezione parziale delle fonti' : 'tutte le fonti selezionate'} · ${count(s.admittedCount)} concerti ammessi e salvati. Orario italiano.`;
+  el('scanTitle').textContent = `${date(report.run.completedAt)}`;
+  el('scanDescription').textContent = `Raccolta ${report.run.event === 'schedule' ? 'giornaliera' : 'manuale'} · ${s.partialScan ? 'selezione parziale' : 'completa'} · Orario italiano.`;
   el('runLink').href = safeUrl(report.run.url) || 'https://github.com/lucacostantini80-oss/jazagora-oracle/actions/workflows/daily-oracle.yml';
   updateFilters();
+  document.querySelectorAll('.oracle-stats .stat-card').forEach(card => {
+    const label = card.querySelector('span').textContent;
+    const value = card.querySelector('strong').textContent;
+    const detail = card.querySelector('small')?.textContent || '';
+    card.title = label + ': ' + value + '. ' + detail;
+    card.setAttribute('aria-label', card.title);
+  });
   render();
 }
 
@@ -274,6 +315,12 @@ el('resetFilters').addEventListener('click', () => { for (const id of ['searchIn
 el('previousPage').addEventListener('click', () => { page = Math.max(0,page - 1); render(); });
 el('nextPage').addEventListener('click', () => { page += 1; render(); });
 el('tableBody').addEventListener('click', event => {
+  const sourceButton = event.target.closest('[data-source-id]');
+  if (sourceButton) {
+    const row = report?.sources.find(item => item.sourceId === sourceButton.dataset.sourceId && item.feedId === sourceButton.dataset.feedId);
+    if (row) showSourceDetails(row);
+    return;
+  }
   const button = event.target.closest('[data-city]');
   if (!button) return;
   el('searchInput').value = ''; el('cityFilter').value = button.dataset.city; setView('events');
@@ -283,6 +330,7 @@ window.addEventListener('offline', () => connection('Connessione assente · ulti
 onAuthStateChanged(auth, async user => {
   unsubscribe?.(); unsubscribe = null; generation += 1;
   if (!user) {
+    closeSourceDetails();
     el('loginView').hidden = false; el('dashboardView').hidden = true; el('adminEmail').textContent = '';
     resetReport(); return;
   }

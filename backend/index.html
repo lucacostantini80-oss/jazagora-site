@@ -1,270 +1,222 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="it">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow, noarchive" />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <meta name="theme-color" content="#12051f" />
-    <title>Jazagora Backend · Consensi comunicazioni</title>
-    <link rel="stylesheet" href="./styles.css?v=20261014-oracolo-1" />
-  </head>
-  <body>
-    <div class="ambient ambient-one" aria-hidden="true"></div>
-    <div class="ambient ambient-two" aria-hidden="true"></div>
-
-    <main class="page-shell">
-      <header class="brand-header">
-        <a class="brand" href="https://jazagora.com/" target="_blank" rel="noreferrer">
-          <img
-            class="brand-mark-image"
-            src="jazagora-icon-no-arrow-exact.png"
-            alt=""
-            width="48"
-            height="48"
-          />
-          <span>
-            <strong>Jazagora</strong>
-            <small>Backend riservato</small>
-          </span>
-        </a>
-        <nav class="backend-nav" aria-label="Sezioni del backend">
-          <a class="backend-nav-link active" href="./" aria-current="page">Consensi e recensioni</a>
-          <a class="backend-nav-link" href="./oracolo.html">Oracolo</a>
-        </nav>
-      </header>
-
-      <section id="loginView" class="auth-card" aria-labelledby="loginTitle">
-        <img
-          class="auth-brand-icon"
-          src="jazagora-icon-no-arrow-exact.png"
-          alt=""
-          width="76"
-          height="76"
-        />
-        <p class="eyebrow">ACCESSO PROTETTO</p>
-        <h1 id="loginTitle">Consensi e comunicazioni</h1>
-        <p>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="noindex, nofollow, noarchive" name="robots"/>
+<meta content="strict-origin-when-cross-origin" name="referrer"/>
+<meta content="#171715" name="theme-color"/>
+<title>Jazagora Backend · Consensi comunicazioni</title>
+<link href="./styles.css?v=20261014-oracolo-1" rel="stylesheet"/>
+<link href="./console.css?v=20261014-console-1" rel="stylesheet"/></head>
+<body>
+<div aria-hidden="true" class="ambient ambient-one"></div>
+<div aria-hidden="true" class="ambient ambient-two"></div>
+<main class="page-shell">
+<header class="brand-header">
+<a class="brand" href="https://jazagora.com/" rel="noreferrer" target="_blank">
+<img alt="" class="brand-mark-image" height="48" src="jazagora-icon-no-arrow-exact.png" width="48"/>
+<span>
+<strong>Jazagora</strong>
+<small>Backend riservato</small>
+</span>
+</a>
+<nav aria-label="Sezioni del backend" class="backend-nav"><a aria-current="page" class="backend-nav-link active" data-workspace-link="mail" href="./#mail">Mail</a><a class="backend-nav-link" data-workspace-link="reviews" href="./#recensioni">Recensioni</a><a class="backend-nav-link" href="./oracolo.html">Oracolo</a></nav>
+<span class="backend-env">Backend riservato</span></header>
+<section aria-labelledby="loginTitle" class="auth-card" id="loginView">
+<img alt="" class="auth-brand-icon" height="76" src="jazagora-icon-no-arrow-exact.png" width="76"/>
+<p class="eyebrow">ACCESSO PROTETTO</p>
+<h1 id="loginTitle">Consensi e comunicazioni</h1>
+<p>
           Accedi con un account Google autorizzato come amministratore di
           Jazagora. Il pannello non contiene chiavi private e non consente di
           modificare i profili.
         </p>
-        <button id="loginButton" class="primary-button google-button" type="button">
-          <span>Continua con Google</span>
-        </button>
-        <p id="authMessage" class="message" role="status" aria-live="polite"></p>
-      </section>
+<button class="primary-button google-button" id="loginButton" type="button">
+<span>Continua con Google</span>
+</button>
+<p aria-live="polite" class="message" id="authMessage" role="status"></p>
+</section>
+<section class="dashboard" hidden="" id="dashboardView">
+<div class="dashboard-heading">
+<div>
 
-      <section id="dashboardView" class="dashboard" hidden>
-        <div class="dashboard-heading">
-          <div>
-            <p class="eyebrow">COMUNICAZIONI E PROMOZIONI</p>
-            <h1>Utenti con consenso attivo</h1>
-            <p>
-              L’elenco si aggiorna automaticamente quando un utente attiva o
-              disattiva il consenso nell’app.
-            </p>
-          </div>
+<h1 id="workspaceTitle">Mail e consensi</h1>
+<p id="workspaceDescription">Utenti con consenso attivo alle comunicazioni.</p>
+</div>
 
-          <div class="account-panel">
-            <span id="connectionStatus" class="status-pill">
-              <span class="status-dot" aria-hidden="true"></span>
+<div class="heading-actions"><button class="primary-button compact" data-workspace="mail" disabled="" id="copyEmailsButton" type="button">
+            Copia email per CCN
+          </button><div class="account-panel">
+<span class="status-pill" id="connectionStatus">
+<span aria-hidden="true" class="status-dot"></span>
               Connessione…
             </span>
-            <span id="adminEmail" class="admin-email"></span>
-            <button id="logoutButton" class="ghost-button" type="button">Esci</button>
-          </div>
-        </div>
+<span class="admin-email" id="adminEmail"></span>
+<button class="ghost-button" id="logoutButton" type="button">Esci</button>
+</div></div></div>
+<section aria-label="Riepilogo" class="stats-grid" data-workspace="mail">
+<article class="stat-card">
+<span>Consensi attivi</span>
+<strong id="activeConsentCount">0</strong>
+</article>
+<article class="stat-card">
+<span>Email valide e uniche</span>
+<strong id="uniqueEmailCount">0</strong>
+</article>
+<article class="stat-card">
+<span>Recensioni sincronizzate</span>
+<strong id="reviewCount">0</strong>
+<small class="stat-detail" id="reviewLastSync">—</small>
+</article><article class="stat-card">
+<span>Ultimo aggiornamento</span>
+<strong id="lastSync">—</strong>
+</article>
 
-        <section class="stats-grid" aria-label="Riepilogo">
-          <article class="stat-card">
-            <span>Consensi attivi</span>
-            <strong id="activeConsentCount">0</strong>
-          </article>
-          <article class="stat-card">
-            <span>Email valide e uniche</span>
-            <strong id="uniqueEmailCount">0</strong>
-          </article>
-          <article class="stat-card">
-            <span>Ultimo aggiornamento</span>
-            <strong id="lastSync">—</strong>
-          </article>
-          <article class="stat-card">
-            <span>Recensioni sincronizzate</span>
-            <strong id="reviewCount">0</strong>
-            <small id="reviewLastSync" class="stat-detail">—</small>
-          </article>
-        </section>
+</section><section aria-label="Riepilogo recensioni" class="stats-grid" data-workspace="reviews" hidden="">
+<article class="stat-card"><span>Recensioni</span><strong id="reviewTotalCount">—</strong></article>
+<article class="stat-card"><span>Valutazione media</span><strong id="reviewAverageCount">—</strong></article>
+<article class="stat-card"><span>Locali recensiti</span><strong id="reviewClubCount">—</strong></article>
+<article class="stat-card"><span>Ultimo aggiornamento</span><strong id="reviewUpdatedAt">—</strong></article>
+</section>
+<section aria-label="Strumenti elenco" class="toolbar" data-workspace="mail">
+<label class="search-box" for="searchInput">
+<svg aria-hidden="true" class="ui-icon" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+<input autocomplete="off" id="searchInput" placeholder="Cerca nome, email o ID utente" type="search"/>
+</label>
 
-        <section class="toolbar" aria-label="Strumenti elenco">
-          <label class="search-box" for="searchInput">
-            <span aria-hidden="true">⌕</span>
-            <input
-              id="searchInput"
-              type="search"
-              autocomplete="off"
-              placeholder="Cerca nome, email o ID utente"
-            />
-          </label>
-          <button id="copyEmailsButton" class="primary-button compact" type="button" disabled>
-            Copia email per CCN
-          </button>
-        </section>
-
-        <p class="privacy-note">
+</section>
+<p class="privacy-note" data-workspace="mail">
           Usa gli indirizzi copiati nel campo <strong>CCN/BCC</strong>, mai in
           “A” o “CC”, per non rendere visibili le email agli altri destinatari.
         </p>
-
-        <section class="data-card" aria-labelledby="resultsTitle">
-          <div class="data-heading">
-            <div>
-              <h2 id="resultsTitle">Elenco consensi</h2>
-              <p id="resultSummary">Nessun dato caricato.</p>
-            </div>
-            <span class="live-label">
-              <span class="status-dot" aria-hidden="true"></span>
+<section aria-labelledby="resultsTitle" class="data-card" data-workspace="mail">
+<div class="data-heading">
+<div>
+<h2 id="resultsTitle">Elenco consensi</h2>
+<p id="resultSummary">Nessun dato caricato.</p>
+</div>
+<span class="live-label">
+<span aria-hidden="true" class="status-dot"></span>
               tempo reale
             </span>
-          </div>
-
-          <div id="consentTableViewport" class="table-wrap table-viewport">
-            <table>
-              <thead>
-                <tr>
-                  <th>Utente</th>
-                  <th>Email comunicazioni</th>
-                  <th>Consenso aggiornato</th>
-                  <th>Versione informativa</th>
-                  <th>ID utente</th>
-                </tr>
-              </thead>
-              <tbody id="consentTableBody"></tbody>
-            </table>
-          </div>
-
-          <div id="consentTableControls" class="table-controls" hidden>
-            <span>5 utenti visibili alla volta · scorri l’elenco</span>
-            <button id="toggleConsentTable" class="table-toggle" type="button">
+</div>
+<div class="table-wrap table-viewport" id="consentTableViewport">
+<table>
+<thead>
+<tr>
+<th>Utente</th>
+<th>Email comunicazioni</th>
+<th>Consenso aggiornato</th>
+<th>Versione informativa</th>
+<th>ID utente</th>
+<th>Stato</th></tr>
+</thead>
+<tbody id="consentTableBody"></tbody>
+</table>
+</div>
+<div class="table-controls" hidden="" id="consentTableControls">
+<span>5 utenti visibili alla volta · scorri l’elenco</span>
+<button class="table-toggle" id="toggleConsentTable" type="button">
               Mostra tutti
             </button>
-          </div>
-
-          <div id="emptyState" class="empty-state">
-            <span aria-hidden="true">◌</span>
-            <h3>Nessun consenso attivo</h3>
-            <p>Gli utenti compariranno qui non appena attiveranno l’opzione.</p>
-          </div>
-        </section>
-
-        <section class="data-card reviews-card" aria-labelledby="reviewsTitle">
-          <div class="data-heading">
-            <div>
-              <h2 id="reviewsTitle">Recensioni</h2>
-              <p id="reviewResultSummary">Nessun dato caricato.</p>
-            </div>
-            <span id="reviewConnectionStatus" class="live-label">
-              <span class="status-dot" aria-hidden="true"></span>
-              Connessione…
-            </span>
-          </div>
-
-          <div class="review-toolbar" aria-label="Ricerca e filtri recensioni">
-            <label class="search-box review-search" for="reviewSearchInput">
-              <span aria-hidden="true">⌕</span>
-              <input
-                id="reviewSearchInput"
-                type="search"
-                autocomplete="off"
-                placeholder="Cerca utente, commento o locale"
-              />
-            </label>
-            <label class="filter-field" for="reviewRatingFilter">
-              <span>Voto</span>
-              <select id="reviewRatingFilter">
-                <option value="">Tutte le stelle</option>
-                <option value="5">5 stelle</option>
-                <option value="4">4 stelle</option>
-                <option value="3">3 stelle</option>
-                <option value="2">2 stelle</option>
-                <option value="1">1 stella</option>
-              </select>
-            </label>
-            <label class="filter-field" for="reviewClubFilter">
-              <span>Locale</span>
-              <select id="reviewClubFilter">
-                <option value="">Tutti i locali</option>
-              </select>
-            </label>
-            <button id="resetReviewFilters" class="ghost-button filter-reset" type="button" disabled>
+</div>
+<div class="empty-state" id="emptyState">
+<span aria-hidden="true">◌</span>
+<h3>Nessun consenso attivo</h3>
+<p>Gli utenti compariranno qui non appena attiveranno l’opzione.</p>
+</div>
+</section>
+<section aria-labelledby="reviewsTitle" class="reviews-panel" data-workspace="reviews" hidden=""><div aria-label="Ricerca e filtri recensioni" class="review-toolbar">
+<label class="search-box review-search" for="reviewSearchInput">
+<svg aria-hidden="true" class="ui-icon" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg>
+<input autocomplete="off" id="reviewSearchInput" placeholder="Cerca utente, commento o locale" type="search"/>
+</label>
+<label class="filter-field" for="reviewRatingFilter">
+<span>Voto</span>
+<select id="reviewRatingFilter">
+<option value="">Tutte le stelle</option>
+<option value="5">5 stelle</option>
+<option value="4">4 stelle</option>
+<option value="3">3 stelle</option>
+<option value="2">2 stelle</option>
+<option value="1">1 stella</option>
+</select>
+</label>
+<label class="filter-field" for="reviewClubFilter">
+<span>Locale</span>
+<select id="reviewClubFilter">
+<option value="">Tutti i locali</option>
+</select>
+</label>
+<button class="ghost-button filter-reset" disabled="" id="resetReviewFilters" type="button">
               Azzera filtri
             </button>
-          </div>
+</div><div class="data-card reviews-card">
+<div class="data-heading">
+<div>
+<h2 id="reviewsTitle">Recensioni sincronizzate</h2>
+<p id="reviewResultSummary">Nessun dato caricato.</p>
+</div>
+<span class="live-label" id="reviewConnectionStatus">
+<span aria-hidden="true" class="status-dot"></span>
+              Connessione…
+            </span>
+</div>
 
-          <div id="reviewTableViewport" class="table-wrap table-viewport">
-            <table>
-              <thead>
-                <tr>
-                  <th>Utente</th>
-                  <th>Stelle</th>
-                  <th>Commento</th>
-                  <th>Locale</th>
-                  <th>Data</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody id="reviewTableBody"></tbody>
-            </table>
-          </div>
-
-          <div id="reviewTableControls" class="table-controls" hidden>
-            <span>5 recensioni visibili alla volta · scorri l’elenco</span>
-            <button id="toggleReviewTable" class="table-toggle" type="button">
+<div class="table-wrap table-viewport" id="reviewTableViewport">
+<table>
+<thead>
+<tr>
+<th>Utente</th>
+<th>Stelle</th>
+<th>Commento</th>
+<th>Locale</th>
+<th>Data</th>
+<th>Azioni</th>
+</tr>
+</thead>
+<tbody id="reviewTableBody"></tbody>
+</table>
+</div>
+<div class="table-controls" hidden="" id="reviewTableControls">
+<span>5 recensioni visibili alla volta · scorri l’elenco</span>
+<button class="table-toggle" id="toggleReviewTable" type="button">
               Mostra tutte
             </button>
-          </div>
-
-          <div id="reviewEmptyState" class="empty-state">
-            <span aria-hidden="true">☆</span>
-            <h3 id="reviewEmptyTitle">Nessuna recensione</h3>
-            <p id="reviewEmptyDescription">Le nuove recensioni compariranno qui in tempo reale.</p>
-          </div>
-        </section>
-
-        <footer class="dashboard-footer">
-          <span>Accesso amministrativo · Le eliminazioni richiedono conferma</span>
-        </footer>
-      </section>
-    </main>
-
-    <dialog
-      id="deleteReviewDialog"
-      class="confirm-dialog"
-      aria-labelledby="deleteReviewTitle"
-      aria-describedby="deleteReviewDescription"
-    >
-      <div class="confirm-dialog-content">
-        <span class="danger-icon" aria-hidden="true">!</span>
-        <p class="eyebrow">AZIONE IRREVERSIBILE</p>
-        <h2 id="deleteReviewTitle">Eliminare definitivamente la recensione?</h2>
-        <p id="deleteReviewDescription">
+</div>
+<div class="empty-state" id="reviewEmptyState">
+<span aria-hidden="true">☆</span>
+<h3 id="reviewEmptyTitle">Nessuna recensione</h3>
+<p id="reviewEmptyDescription">Le nuove recensioni compariranno qui in tempo reale.</p>
+</div>
+</div></section>
+<footer class="dashboard-footer">
+<span>Accesso amministrativo · Le eliminazioni richiedono conferma</span>
+</footer>
+</section>
+</main>
+<dialog aria-describedby="deleteReviewDescription" aria-labelledby="deleteReviewTitle" class="confirm-dialog" id="deleteReviewDialog">
+<div class="confirm-dialog-content">
+<span aria-hidden="true" class="danger-icon">!</span>
+<p class="eyebrow">AZIONE IRREVERSIBILE</p>
+<h2 id="deleteReviewTitle">Eliminare definitivamente la recensione?</h2>
+<p id="deleteReviewDescription">
           La recensione verrà rimossa da Firestore e non potrà essere recuperata.
         </p>
-        <div id="deleteReviewSummary" class="delete-review-summary"></div>
-        <div class="confirm-dialog-actions">
-          <button id="cancelDeleteReviewButton" class="ghost-button" type="button">
+<div class="delete-review-summary" id="deleteReviewSummary"></div>
+<div class="confirm-dialog-actions">
+<button class="ghost-button" id="cancelDeleteReviewButton" type="button">
             Annulla
           </button>
-          <button id="confirmDeleteReviewButton" class="danger-button" type="button">
+<button class="danger-button" id="confirmDeleteReviewButton" type="button">
             Elimina definitivamente
           </button>
-        </div>
-      </div>
-    </dialog>
-
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260802-1"></script>
-  </body>
+</div>
+</div>
+</dialog>
+<div aria-live="polite" class="toast" id="toast" role="status"></div>
+<script src="./app.js?v=20261014-console-1" type="module"></script>
+<script defer="" src="./console.js?v=20261014-console-1"></script></body>
 </html>
-
-

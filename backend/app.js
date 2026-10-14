@@ -296,7 +296,16 @@ function renderUsers() {
       secondaryDetails.push(`Account: ${user.accountEmail}`);
     }
     accountEmail.textContent = secondaryDetails.join(" · ");
-    userCell.append(name, accountEmail);
+    const avatar = document.createElement("span");
+    avatar.className = "user-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = resolvedName.name.split(/\s+/).slice(0, 2).map(part => part.charAt(0)).join("").toLocaleUpperCase("it");
+    const identity = document.createElement("div");
+    identity.append(name, accountEmail);
+    const identityLayout = document.createElement("div");
+    identityLayout.className = "user-identity";
+    identityLayout.append(avatar, identity);
+    userCell.append(identityLayout);
 
     const emailCell = createCell(
       "Email comunicazioni",
@@ -308,7 +317,13 @@ function renderUsers() {
     const uidCell = createCell("ID utente", user.uid, "uid-value");
     uidCell.title = user.uid;
 
-    row.append(userCell, emailCell, dateCell, policyCell, uidCell);
+    const stateCell = document.createElement("td");
+    stateCell.dataset.label = "Stato";
+    const state = document.createElement("span");
+    state.className = "consent-status";
+    state.textContent = "Attivo";
+    stateCell.append(state);
+    row.append(userCell, emailCell, dateCell, policyCell, uidCell, stateCell);
     fragment.append(row);
   });
 
@@ -445,7 +460,7 @@ function createReviewActionsCell(review) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "review-delete-button";
-  button.textContent = "Elimina";
+  button.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"></path></svg><span>Elimina</span>';
   button.setAttribute(
     "aria-label",
     `Elimina la recensione di ${getReviewDisplayName(review)}`,
@@ -625,6 +640,13 @@ function renderReviews() {
     : "Nessuna recensione presente.";
   elements.resetReviewFilters.disabled = !filtersActive;
   elements.reviewCount.textContent = String(allReviews.length);
+  document.getElementById("reviewTotalCount").textContent = String(allReviews.length);
+  const rated = allReviews.filter(review => Number.isFinite(review.rating));
+  document.getElementById("reviewAverageCount").textContent = rated.length
+    ? new Intl.NumberFormat("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(rated.reduce((sum, review) => sum + review.rating, 0) / rated.length)
+    : "—";
+  document.getElementById("reviewClubCount").textContent = String(new Set(allReviews.map(getReviewClubFilterKey)).size);
+  document.getElementById("reviewUpdatedAt").textContent = new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit" }).format(new Date());
   elements.reviewLastSync.textContent = new Intl.DateTimeFormat("it-IT", {
     hour: "2-digit",
     minute: "2-digit",
