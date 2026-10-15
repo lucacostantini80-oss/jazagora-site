@@ -5,6 +5,7 @@
   const RING_SCALE = 1;
   const CIRCLE_PERIOD = 52;
   const WAVE_SPEED = 1.56;
+  const WORDMARK_RECT = {x:680,y:328,w:560,h:88};
   const BAR_OPACITY = { 'frequency-left': 1, 'frequency-middle': 1, 'frequency-top': 1, 'frequency-bottom': 1, 'frequency-right-top': 1, 'frequency-right-bottom': 1 };
   const art = document.querySelector('.hero-art');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -88,8 +89,6 @@
       if(side===0)continue;
       const top=upper(px),bottom=lower(px);
       for(let y=0;y<H;y++) {
-        // Protect the stationary wordmark in every compositing pass.
-        if(x>=680 && y>=320 && y<=430)continue;
         const py=y/H, band=Math.max(1-smooth(.012,.047,Math.abs(py-top)),1-smooth(.012,.052,Math.abs(py-bottom)));
         if(band===0)continue;
         const i=(y*W+x)*4;
@@ -149,11 +148,9 @@
         float direction=p.x<.33?-1.:1.;
         vec4 moving=mix(base,flow(p,0.,direction),maskUpper*.82);
         moving=mix(moving,flow(p,1.,direction),maskLower*.82);
-        // Never shift the wordmark, central region, or image edges.
+        // The wordmark is an independent alpha layer above this background.
+        // Preserve the central region and image edges.
         float safe=smoothstep(0.,.045,p.x)*(1.-smoothstep(.955,1.,p.x));
-        vec2 pixel=p*vec2(1280.,720.);
-        float branding=smoothstep(656.,680.,pixel.x)*(1.-smoothstep(1240.,1264.,pixel.x))*smoothstep(300.,320.,pixel.y)*(1.-smoothstep(430.,450.,pixel.y));
-        safe*=1.-branding;
         gl_FragColor=mix(base,moving,safe);
       }`;
     function shader(type,source) { const s=gl.createShader(type); gl.shaderSource(s,source); gl.compileShader(s); if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
@@ -166,9 +163,10 @@
     gl.uniform1i(gl.getUniformLocation(program,'picture'),0); const clock=gl.getUniformLocation(program,'time'); gl.viewport(0,0,W,H);
     return time => { gl.uniform1f(clock,time); gl.drawArrays(gl.TRIANGLES,0,6); };
   }
-  Promise.all([load(originalURL),load(new URL('background.c77f6680ca7b.png',assetBase).href),load(new URL('circle-core.16fc8a5a2b39.png',assetBase).href),load(new URL('circle-rings.b7e14c76708e.png',assetBase).href)]).then(([original,preparedBackground,core,rings])=>{
+  Promise.all([load(originalURL),load(new URL('background.d76b84edbaf3.png',assetBase).href),load(new URL('circle-core.16fc8a5a2b39.png',assetBase).href),load(new URL('circle-rings.b7e14c76708e.png',assetBase).href),load(new URL('wordmark.5041b750f1a6.png',assetBase).href)]).then(([original,preparedBackground,core,rings,preparedWordmark])=>{
     const source=makeCanvas(), sourceCtx=source.getContext('2d'); sourceCtx.drawImage(original,0,0,W,H);
     const pixels=sourceCtx.getImageData(0,0,W,H).data;
+    const wordmark={texture:preparedWordmark,geometry:{"sourceRect":[680,328,560,88],"sourceInkBounds":[685,332,1218,413],"offsetX":40,"offsetY":0,"position":[720,328],"sweptRadius":278.9928314491252,"sweptRight":704,"minimumGap":21,"rightMargin":22,"opaqueSourcePixels":11733,"background":"transparent","shadow":"soft alpha shadow; no rectangle"}};
     const barLayers=groups.map(group=>({...group,bars:group.bars.map(bar=>({rect:bar,texture:barTexture(original,bar)}))}));
     const colourAudit=verifyBarColours(pixels,barLayers);
     const plate=makeCanvas(); plate.getContext('2d').drawImage(preparedBackground,0,0,W,H);
@@ -196,11 +194,11 @@
       ribbonCtx.globalCompositeOperation='destination-in';ribbonCtx.drawImage(ribbons,0,0);
       ribbonCtx.globalCompositeOperation='source-over';ctx.drawImage(ribbonFrame,0,0);
       // A single rotation keeps the original alignment between core and rings.
-      // Clip in image coordinates so full-size arcs never cover the fixed j.
-      ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.rect(680,320,560,110);ctx.clip('evenodd');
+      ctx.save();
       ctx.translate(CX,CY);ctx.rotate(time*Math.PI*2/CIRCLE_PERIOD);
       ctx.save();ctx.scale(RING_SCALE,RING_SCALE);ctx.drawImage(rings,-280,-280);ctx.restore();
       ctx.save();ctx.shadowColor='rgba(56,24,105,.32)';ctx.shadowBlur=6;ctx.shadowOffsetY=3;ctx.drawImage(core,-280,-280);ctx.restore();ctx.restore();
+      ctx.save();ctx.shadowColor='rgba(44,20,86,.32)';ctx.shadowBlur=4;ctx.shadowOffsetX=1;ctx.shadowOffsetY=4;ctx.drawImage(wordmark.texture,...wordmark.geometry.position);ctx.restore();
       art.dataset.motionTime=time.toFixed(2);
       art.dataset.motionAngle=(time*360/CIRCLE_PERIOD%360).toFixed(1);
       art.dataset.motionLayers=String(3+allBars.length);
@@ -213,7 +211,7 @@
       }
       raf=requestAnimationFrame(tick);
     }
-    ready=true; art.dataset.motionRevision='original-circle-6'; art.dataset.circlePeriod=String(CIRCLE_PERIOD); art.dataset.ringsScale=String(RING_SCALE); art.dataset.waveSpeed=String(WAVE_SPEED); art.dataset.barColourMismatches=String(colourAudit.rgbMismatches); art.dataset.barColourPixels=String(colourAudit.opaquePixelsCompared); art.classList.add('motion-ready'); draw(0);
+    ready=true; art.dataset.motionRevision='seamless-wordmark-7'; art.dataset.wordmarkGeometry=JSON.stringify(wordmark.geometry); art.dataset.circlePeriod=String(CIRCLE_PERIOD); art.dataset.ringsScale=String(RING_SCALE); art.dataset.waveSpeed=String(WAVE_SPEED); art.dataset.barColourMismatches=String(colourAudit.rgbMismatches); art.dataset.barColourPixels=String(colourAudit.opaquePixelsCompared); art.classList.add('motion-ready'); draw(0);
     art.dataset.motionState=reduced.matches?'reduced-motion':'playing';
     art.classList.toggle('motion-ready',!reduced.matches);
     raf=requestAnimationFrame(tick);
