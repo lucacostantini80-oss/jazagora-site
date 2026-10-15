@@ -1,0 +1,4 @@
+.hero-art{overflow:hidden}
+.motion-background,.motion-foreground{position:absolute;inset:var(--art-top) 0 auto;display:block;width:100%;aspect-ratio:16/9;pointer-events:none}
+.hero-art.motion-ready>img{visibility:hidden}
+@media(prefers-reduced-motion:reduce){.hero-art.motion-ready>img{visibility:visible}.hero-art>canvas{visibility:hidden}}
