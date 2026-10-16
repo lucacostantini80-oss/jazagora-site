@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Controllo animazione · Jazagora</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0b0319;color:#faf5ee}*{box-sizing:border-box}body{max-width:700px;margin:0 auto;padding:20px}h1{font-size:24px;margin:0 0 10px}p{line-height:1.5;color:#cfc4dd}iframe{display:block;width:100%;height:270px;border:1px solid #503766;border-radius:12px;background:#11071f;margin:18px 0}dl{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px}dt{color:#cfc4dd}dd{margin:0;overflow-wrap:anywhere}textarea{display:block;width:100%;min-height:240px;padding:12px;background:#160a26;border:1px solid #503766;color:#faf5ee;border-radius:10px;font:12px/1.5 monospace}button,a{display:inline-block;padding:12px 16px;border-radius:10px;border:1px solid #d8af6c;background:#f0cf96;color:#190d28;font-weight:700;text-decoration:none;margin:14px 6px 0 0}#error{overflow-wrap:anywhere;color:#f4b4bc}#copy-state{font-size:14px}
+  </style>
+</head>
+<body>
+  <h1>Controllo animazione</h1>
+  <p>Apri questa pagina sul telefono dove il banner resta fermo. Premi «Copia risultato» e incolla il testo nella chat.</p>
+  <iframe id="site" title="Hero Jazagora in verifica"></iframe>
+  <dl>
+    <dt>Versione caricata</dt><dd id="revision">In caricamento</dd>
+    <dt>Stato del banner</dt><dd id="state">In caricamento</dd>
+    <dt>Movimento ridotto di sistema</dt><dd id="reduced">—</dd>
+    <dt>Fotogrammi in avanzamento</dt><dd id="advancing">Attendo la lettura</dd>
+  </dl>
+  <p id="error"></p>
+  <textarea id="report" aria-label="Risultato del controllo" readonly></textarea>
+  <button id="copy" type="button">Copia risultato</button>
+  <button id="reload" type="button">Ripeti controllo</button>
+  <p id="copy-state" role="status"></p>
+  <script>
+    (()=>{
+      const frame=document.getElementById('site'), field=document.getElementById('report');
+      let previousTime=null, advancing=false, result={};
+      const out=(id,value)=>document.getElementById(id).textContent=value;
+      const reload=()=>{previousTime=null;advancing=false;frame.src='/?hero-check='+Date.now();};
+      function read(){
+        try{
+          const win=frame.contentWindow, doc=frame.contentDocument, art=doc.querySelector('.hero-art');
+          if(!art)return;
+          const time=Number(art.dataset.motionTime);
+          if(previousTime!==null&&Number.isFinite(time)&&time>previousTime)advancing=true;
+          if(Number.isFinite(time))previousTime=time;
+          const reduced=win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          result={diagnostic:'hero-check-1',userAgent:navigator.userAgent,viewport:[win.innerWidth,win.innerHeight],reducedMotion:reduced,online:navigator.onLine,saveData:!!navigator.connection?.saveData,visibility:doc.visibilityState,artBounds:art.getBoundingClientRect().toJSON(),motion:{...art.dataset},advancing,script:[...doc.scripts].filter(s=>s.src.includes('hero-motion')).map(s=>s.src),canvases:[...art.querySelectorAll('canvas')].map(c=>({class:c.className,width:c.width,height:c.height,visibility:win.getComputedStyle(c).visibility})),poster:{loaded:!!art.querySelector('img')?.complete,visibility:win.getComputedStyle(art.querySelector('img')).visibility}};
+          out('revision',art.dataset.motionRevision||'Non inizializzata');
+          out('state',art.dataset.motionState||'In attesa del renderer');
+          out('reduced',reduced?'Attivo':'Disattivato');
+          out('advancing',advancing?'Sì':'Non ancora');
+          out('error',art.dataset.motionError||'');
+          field.value=JSON.stringify(result,null,2);
+        }catch(error){out('error',error.message);}
+      }
+      document.getElementById('reload').onclick=reload;
+      document.getElementById('copy').onclick=async()=>{
+        read();
+        try{await navigator.clipboard.writeText(field.value);out('copy-state','Risultato copiato: puoi incollarlo nella chat.');}
+        catch{field.focus();field.select();out('copy-state','Seleziona e copia il testo del risultato.');}
+      };
+      frame.addEventListener('load',read);setInterval(read,700);reload();
+    })();
+  </script>
+</body>
+</html>
