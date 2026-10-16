@@ -1,4 +1,5 @@
 .hero-art{overflow:hidden}
-.motion-background,.motion-foreground{position:absolute;inset:var(--art-top) 0 auto;display:block;width:100%;aspect-ratio:16/9;pointer-events:none}
+.motion-background,.motion-foreground{position:absolute;inset:var(--art-top) 0 auto;display:block;width:100%;aspect-ratio:16/9;pointer-events:none;visibility:hidden}
+.hero-art.motion-ready>canvas{visibility:visible}
 .hero-art.motion-ready>img{visibility:hidden}
-@media(prefers-reduced-motion:reduce){.hero-art.motion-ready>img{visibility:visible}.hero-art>canvas{visibility:hidden}}
+@media(prefers-reduced-motion:reduce){.hero-art.motion-ready>img{visibility:visible}.hero-art.motion-ready>canvas{visibility:hidden}}

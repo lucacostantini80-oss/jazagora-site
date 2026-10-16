@@ -170,7 +170,7 @@
     const barLayers=groups.map(group=>({...group,bars:group.bars.map(bar=>({rect:bar,texture:barTexture(original,bar)}))}));
     const colourAudit=verifyBarColours(pixels,barLayers);
     const plate=makeCanvas(); plate.getContext('2d').drawImage(preparedBackground,0,0,W,H);
-    const renderWaves=prepareWaveRenderer(plate);
+    let renderWaves=prepareWaveRenderer(plate), contextLost=false, pageActive=true;
     const ribbons=ribbonFrontMask(plate), ribbonFrame=makeCanvas(), ribbonCtx=ribbonFrame.getContext('2d');
     function draw(time) {
       renderWaves(time);
@@ -204,6 +204,8 @@
       art.dataset.motionLayers=String(3+allBars.length);
     }
     function tick(timestamp) {
+      raf=0;
+      if(!playing||originalMode||!pageActive||!inView||document.hidden)return;
       if(!last) last=timestamp;
       if(timestamp-last>=1000/30) {
         const delta=Math.min((timestamp-last)/1000,.1); last=timestamp;
@@ -211,14 +213,44 @@
       }
       raf=requestAnimationFrame(tick);
     }
-    ready=true; art.dataset.motionRevision='seamless-wordmark-7'; art.dataset.wordmarkGeometry=JSON.stringify(wordmark.geometry); art.dataset.circlePeriod=String(CIRCLE_PERIOD); art.dataset.ringsScale=String(RING_SCALE); art.dataset.waveSpeed=String(WAVE_SPEED); art.dataset.barColourMismatches=String(colourAudit.rgbMismatches); art.dataset.barColourPixels=String(colourAudit.opaquePixelsCompared); art.classList.add('motion-ready'); draw(0);
-    art.dataset.motionState=reduced.matches?'reduced-motion':'playing';
-    art.classList.toggle('motion-ready',!reduced.matches);
-    raf=requestAnimationFrame(tick);
-    reduced.addEventListener('change',()=>{playing=!reduced.matches;art.classList.toggle('motion-ready',playing);art.dataset.motionState=playing?'playing':'reduced-motion';});
-    bg.addEventListener('webglcontextlost',event=>{event.preventDefault();playing=false;art.classList.remove('motion-ready');art.dataset.motionState='static-context-lost';cancelAnimationFrame(raf);});
-    new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;last=0;},{threshold:0}).observe(art);
-    document.addEventListener('visibilitychange',()=>{last=0;});
-    window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
+    function stopLoop() {
+      if(raf)cancelAnimationFrame(raf);
+      raf=0;last=0;
+    }
+    function startLoop() {
+      if(ready&&playing&&pageActive&&inView&&!document.hidden&&!raf) {
+        last=0;raf=requestAnimationFrame(tick);
+      }
+    }
+    function syncMotion() {
+      playing=!reduced.matches&&!contextLost;
+      art.classList.toggle('motion-ready',playing);
+      art.dataset.motionState=contextLost?'static-context-lost':reduced.matches?'reduced-motion':'playing';
+      stopLoop();startLoop();
+    }
+    ready=true; art.dataset.motionRevision='mobile-resume-8'; art.dataset.wordmarkGeometry=JSON.stringify(wordmark.geometry); art.dataset.circlePeriod=String(CIRCLE_PERIOD); art.dataset.ringsScale=String(RING_SCALE); art.dataset.waveSpeed=String(WAVE_SPEED); art.dataset.barColourMismatches=String(colourAudit.rgbMismatches); art.dataset.barColourPixels=String(colourAudit.opaquePixelsCompared); draw(0);
+    syncMotion();
+    reduced.addEventListener('change',syncMotion);
+    bg.addEventListener('webglcontextlost',event=>{
+      event.preventDefault();contextLost=true;syncMotion();
+    });
+    bg.addEventListener('webglcontextrestored',()=>{
+      try {
+        // Android may discard the GPU resources while the page is suspended.
+        // Rebuild the shader and texture before resuming the same composition.
+        renderWaves=prepareWaveRenderer(plate);contextLost=false;draw(elapsed);syncMotion();
+      } catch(error) {
+        contextLost=true;art.dataset.motionError=error.message;syncMotion();
+      }
+    });
+    new IntersectionObserver(entries=>{
+      inView=entries[0].isIntersecting;
+      if(inView)startLoop();else stopLoop();
+    },{threshold:0}).observe(art);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)stopLoop();else startLoop();});
+    // Back/forward navigation can restore this document from the browser cache.
+    // A cancelled animation frame must be explicitly restarted on pageshow.
+    window.addEventListener('pagehide',()=>{pageActive=false;stopLoop();});
+    window.addEventListener('pageshow',()=>{pageActive=true;startLoop();});
   }).catch(error=>{ art.dataset.motionError=error.message; bg.remove(); fg.remove(); art.classList.remove('motion-ready'); art.dataset.motionState='static-fallback'; console.error(error); });
 })();
