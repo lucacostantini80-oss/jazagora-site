@@ -165,7 +165,9 @@ tr:nth-child(4n) .user-avatar { background: #574735; }
 .oracle-table-wrap .oracle-event-link { display: block; width: fit-content; max-width: 100%; border-radius: 2px; }
 .oracle-table-wrap .oracle-event-link:hover { text-decoration: none; }
 .oracle-event-link:hover strong, .oracle-event-link:focus-visible strong { color: var(--gold-soft); text-decoration: underline; text-underline-offset: 3px; }
-.oracle-event-arrow { color: var(--gold); font-size: 12px; white-space: nowrap; }
+.oracle-event-row { cursor: pointer; transition: background-color 150ms ease; }
+.oracle-table-wrap .oracle-event-row:hover, .oracle-table-wrap .oracle-event-row:focus-within { background: #303b47; }
+.oracle-event-row:hover .oracle-event-link strong, .oracle-event-row:focus-within .oracle-event-link strong { color: var(--gold-soft); }
 .oracle-table-wrap[aria-busy="true"] { opacity: 1; cursor: progress; }
 .oracle-number { font-size: 18px; font-weight: 550; color: var(--gold); }
 .source-detail-button { min-height: 34px; padding: 0 13px; }

@@ -192,9 +192,9 @@ function errorRow(row) {
 function eventRow(row) {
   // sourceUrl belongs to this event in the scan report, not to the source registry.
   const eventUrl = safeUrl(row.sourceUrl);
-  const concert = `<strong>${esc(row.title)}${eventUrl ? ' <span class="oracle-event-arrow" aria-hidden="true">↗</span>' : ''}</strong><small>${esc(row.venueName || 'Luogo da verificare')}</small>`;
+  const concert = `<strong>${esc(row.title)}</strong><small>${esc(row.venueName || 'Luogo da verificare')}</small>`;
   const eventTitle = eventUrl ? `<a class="oracle-event-link" href="${esc(eventUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`Apri evento: ${row.title} · ${row.venueName || 'Luogo da verificare'} (nuova scheda)`)}">${concert}</a>` : concert;
-  return `<tr><td>${eventTitle}</td><td>${eventDate(row.startsAt)}<small>${esc(row.timeLabel || 'Orario non indicato')}</small></td><td>${esc(row.city)}<small>${esc(row.region)}</small></td><td>${link(row.sourceId || 'Sito della fonte', row.sourceUrl)}</td><td>${view === 'review' ? `<span class="oracle-status partial">Da verificare</span><small>${esc(reasons[row.reason] || row.reason || 'Dati da verificare')}</small>` : '<span class="oracle-status">Ammesso e salvato</span>'}</td></tr>`;
+  return `<tr${eventUrl ? ' class="oracle-event-row"' : ''}><td>${eventTitle}</td><td>${eventDate(row.startsAt)}<small>${esc(row.timeLabel || 'Orario non indicato')}</small></td><td>${esc(row.city)}<small>${esc(row.region)}</small></td><td>${link(row.sourceId || 'Sito della fonte', row.sourceUrl)}</td><td>${view === 'review' ? `<span class="oracle-status partial">Da verificare</span><small>${esc(reasons[row.reason] || row.reason || 'Dati da verificare')}</small>` : '<span class="oracle-status">Ammesso e salvato</span>'}</td></tr>`;
 }
 
 function render() {
@@ -319,6 +319,12 @@ el('resetFilters').addEventListener('click', () => { for (const id of ['searchIn
 el('previousPage').addEventListener('click', () => { page = Math.max(0,page - 1); render(); });
 el('nextPage').addEventListener('click', () => { page += 1; render(); });
 el('tableBody').addEventListener('click', event => {
+  const concertRow = event.target.closest('.oracle-event-row');
+  if (concertRow && !event.target.closest('a, button, input, select, textarea, summary')) {
+    // Reuse the real link so blank cells behave like the title, without opening twice.
+    if (!window.getSelection()?.toString()) concertRow.querySelector('.oracle-event-link')?.click();
+    return;
+  }
   const sourceButton = event.target.closest('[data-source-id]');
   if (sourceButton) {
     const row = report?.sources.find(item => item.sourceId === sourceButton.dataset.sourceId && item.feedId === sourceButton.dataset.feedId);
