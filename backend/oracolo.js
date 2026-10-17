@@ -190,7 +190,11 @@ function errorRow(row) {
 }
 
 function eventRow(row) {
-  return `<tr><td><strong>${esc(row.title)}</strong><small>${esc(row.venueName || 'Luogo da verificare')}</small></td><td>${eventDate(row.startsAt)}<small>${esc(row.timeLabel || 'Orario non indicato')}</small></td><td>${esc(row.city)}<small>${esc(row.region)}</small></td><td>${link(row.sourceId || 'Sito della fonte', row.sourceUrl)}</td><td>${view === 'review' ? `<span class="oracle-status partial">Da verificare</span><small>${esc(reasons[row.reason] || row.reason || 'Dati da verificare')}</small>` : '<span class="oracle-status">Ammesso e salvato</span>'}</td></tr>`;
+  // sourceUrl belongs to this event in the scan report, not to the source registry.
+  const eventUrl = safeUrl(row.sourceUrl);
+  const concert = `<strong>${esc(row.title)}${eventUrl ? ' <span class="oracle-event-arrow" aria-hidden="true">↗</span>' : ''}</strong><small>${esc(row.venueName || 'Luogo da verificare')}</small>`;
+  const eventTitle = eventUrl ? `<a class="oracle-event-link" href="${esc(eventUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(`Apri evento: ${row.title} · ${row.venueName || 'Luogo da verificare'} (nuova scheda)`)}">${concert}</a>` : concert;
+  return `<tr><td>${eventTitle}</td><td>${eventDate(row.startsAt)}<small>${esc(row.timeLabel || 'Orario non indicato')}</small></td><td>${esc(row.city)}<small>${esc(row.region)}</small></td><td>${link(row.sourceId || 'Sito della fonte', row.sourceUrl)}</td><td>${view === 'review' ? `<span class="oracle-status partial">Da verificare</span><small>${esc(reasons[row.reason] || row.reason || 'Dati da verificare')}</small>` : '<span class="oracle-status">Ammesso e salvato</span>'}</td></tr>`;
 }
 
 function render() {
@@ -343,4 +347,3 @@ onAuthStateChanged(auth, async user => {
   } catch { await signOut(auth); el('authMessage').textContent = 'Impossibile verificare i permessi amministrativi.'; }
 });
 setView('cities');
-
